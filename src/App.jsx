@@ -11,7 +11,8 @@ import RoleList from './components/roles/RoleList';
 import { CompanyList } from './components/companies';
 import { ToleranceList } from './components/tolerances';
 import { VehicleTypeList } from './components/vehicleTypes';
-import Vehiculos from './components/Vehiculos';
+import { VehicleList } from './components/vehicles';
+import OwnerList from './components/owners/OwnerList';
 import Reportes from './components/Reportes';
 import ProtectedRoute from './components/ProtectedRoute';
 import "./App.css";
@@ -83,7 +84,7 @@ const AppRouter = () => {
         } 
       />
       <Route 
-        path="/tipos-vehiculos" 
+        path="/tipos-vehiculo" 
         element={
           <ProtectedRoute>
             <VehicleTypeList />
@@ -94,7 +95,15 @@ const AppRouter = () => {
         path="/vehiculos" 
         element={
           <ProtectedRoute>
-            <Vehiculos />
+            <VehicleList />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/propietarios" 
+        element={
+          <ProtectedRoute>
+            <OwnerList />
           </ProtectedRoute>
         } 
       />

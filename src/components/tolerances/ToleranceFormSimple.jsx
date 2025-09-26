@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Modal, 
   Form, 
-  Select, 
+  Input,
   InputNumber,
   Button, 
   Space, 
@@ -10,10 +10,9 @@ import {
 } from 'antd';
 import { 
   ClockCircleOutlined, 
-  CarOutlined
+  FileTextOutlined
 } from '@ant-design/icons';
-
-const { Option } = Select;
+import { toleranceService } from '../../services/toleranceService';
 
 const ToleranceForm = ({ visible, onCancel, onSuccess, editingTolerance = null }) => {
   const [form] = Form.useForm();
@@ -21,18 +20,11 @@ const ToleranceForm = ({ visible, onCancel, onSuccess, editingTolerance = null }
 
   const isEditing = !!editingTolerance;
 
-  // Datos de prueba para tipos de vehículos
-  const vehicleTypes = [
-    { id: 1, nombre: 'Auto', valor: 500 },
-    { id: 2, nombre: 'Moto', valor: 200 },
-    { id: 3, nombre: 'Camioneta', valor: 800 }
-  ];
-
   useEffect(() => {
     if (visible) {
       if (isEditing && editingTolerance) {
         form.setFieldsValue({
-          tipo_vehiculo_id: editingTolerance.tipo_vehiculo_id,
+          descripcion: editingTolerance.descripcion,
           minutos: editingTolerance.minutos,
         });
       } else {
@@ -47,18 +39,29 @@ const ToleranceForm = ({ visible, onCancel, onSuccess, editingTolerance = null }
   const handleSubmit = async (values) => {
     setLoading(true);
     try {
-      // Simular API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      let response;
       
-      message.success(
-        isEditing 
-          ? 'Tolerancia actualizada correctamente' 
-          : 'Tolerancia creada correctamente'
-      );
+      if (isEditing) {
+        // Actualizar tolerancia existente
+        response = await toleranceService.updateTolerance(editingTolerance.id, values);
+      } else {
+        // Crear nueva tolerancia
+        response = await toleranceService.createTolerance(values);
+      }
       
-      form.resetFields();
-      onSuccess();
+      if (response.success) {
+        message.success(
+          isEditing 
+            ? 'Tolerancia actualizada correctamente' 
+            : 'Tolerancia creada correctamente'
+        );
+        form.resetFields();
+        onSuccess();
+      } else {
+        message.error(response.message || 'Error al procesar la solicitud');
+      }
     } catch (error) {
+      console.error('Error al procesar tolerancia:', error);
       message.error('Error al procesar la solicitud');
     } finally {
       setLoading(false);
@@ -90,22 +93,19 @@ const ToleranceForm = ({ visible, onCancel, onSuccess, editingTolerance = null }
         disabled={loading}
       >
         <Form.Item
-          label="Tipo de Vehículo"
-          name="tipo_vehiculo_id"
+          label="Descripción"
+          name="descripcion"
           rules={[
-            { required: true, message: 'Por favor selecciona un tipo de vehículo' }
+            { required: true, message: 'Por favor ingresa una descripción' },
+            { max: 255, message: 'Máximo 255 caracteres' }
           ]}
         >
-          <Select placeholder="Selecciona un tipo de vehículo">
-            {vehicleTypes.map(vehicleType => (
-              <Option key={vehicleType.id} value={vehicleType.id}>
-                <Space>
-                  <CarOutlined />
-                  {vehicleType.nombre} (${vehicleType.valor})
-                </Space>
-              </Option>
-            ))}
-          </Select>
+          <Input 
+            prefix={<FileTextOutlined />}
+            placeholder="Ej: Tolerancia para entrada matutina"
+            maxLength={255}
+            showCount
+          />
         </Form.Item>
 
         <Form.Item

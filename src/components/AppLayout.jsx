@@ -89,16 +89,22 @@ const AppLayout = ({ children }) => {
       onClick: () => handleMobileNavigation('/tolerancias'),
     },
     {
-      key: '/tipos-vehiculos',
+      key: '/tipos-vehiculo',
       icon: <TagOutlined />,
-      label: 'Tipos de Vehículos',
-      onClick: () => handleMobileNavigation('/tipos-vehiculos'),
+      label: 'Tipos de Vehículo',
+      onClick: () => handleMobileNavigation('/tipos-vehiculo'),
     },
     {
       key: '/vehiculos',
       icon: <CarOutlined />,
       label: 'Vehículos',
       onClick: () => handleMobileNavigation('/vehiculos'),
+    },
+    {
+      key: '/propietarios',
+      icon: <UserOutlined />,
+      label: 'Propietarios',
+      onClick: () => handleMobileNavigation('/propietarios'),
     },
     {
       key: '/reportes',
