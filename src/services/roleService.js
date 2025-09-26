@@ -17,9 +17,9 @@ apiClient.interceptors.request.use(
     const token = localStorage.getItem('access_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
-      console.log('Token enviado:', `Bearer ${token.substring(0, 20)}...`);
+      console.log('Token enviado para roles:', `Bearer ${token.substring(0, 20)}...`);
     } else {
-      console.warn('No se encontró token de acceso');
+      console.warn('No se encontró token de acceso para roles');
     }
     return config;
   },
@@ -42,19 +42,21 @@ apiClient.interceptors.response.use(
   }
 );
 
-export const userService = {
+export const roleService = {
   /**
-   * Obtener todos los usuarios con paginación
+   * Obtener todos los roles con paginación
    * @param {number} page - Número de página (opcional)
    * @param {number} perPage - Elementos por página (opcional)
    * @returns {Promise} Respuesta de la API
    */
-  async getUsers(page = 1, perPage = 15) {
+  async getRoles(page = 1, perPage = 15) {
     try {
-      const response = await apiClient.get(`/users?page=${page}&per_page=${perPage}`);
+      console.log('Obteniendo roles - página:', page, 'por página:', perPage);
+      const response = await apiClient.get(`/roles?page=${page}&per_page=${perPage}`);
+      console.log('Respuesta de roles:', response.data);
       return response.data;
     } catch (error) {
-      console.error('Error al obtener usuarios:', error);
+      console.error('Error al obtener roles:', error);
       console.error('Status:', error.response?.status);
       console.error('Data:', error.response?.data);
       throw this.handleError(error);
@@ -62,87 +64,83 @@ export const userService = {
   },
 
   /**
-   * Obtener un usuario específico por ID
-   * @param {number} id - ID del usuario
+   * Obtener un rol específico por ID
+   * @param {number} id - ID del rol
    * @returns {Promise} Respuesta de la API
    */
-  async getUserById(id) {
+  async getRoleById(id) {
     try {
-      const response = await apiClient.get(`/users/${id}`);
+      const response = await apiClient.get(`/roles/${id}`);
       return response.data;
     } catch (error) {
-      console.error('Error al obtener usuario:', error);
+      console.error('Error al obtener rol:', error);
       throw this.handleError(error);
     }
   },
 
   /**
-   * Crear un nuevo usuario
-   * @param {Object} userData - Datos del usuario
-   * @param {string} userData.name - Nombre del usuario
-   * @param {string} userData.email - Email del usuario
-   * @param {string} userData.password - Contraseña
-   * @param {string} userData.password_confirmation - Confirmación de contraseña
+   * Crear un nuevo rol
+   * @param {Object} roleData - Datos del rol
+   * @param {string} roleData.descripcion - Nombre del rol
+   * @param {string} roleData.estado - Estado del rol: 'activo' o 'suspendido' (opcional, por defecto 'activo')
    * @returns {Promise} Respuesta de la API
    */
-  async createUser(userData) {
+  async createRole(roleData) {
     try {
-      const response = await apiClient.post('/users', userData);
+      const response = await apiClient.post('/roles', roleData);
       return response.data;
     } catch (error) {
-      console.error('Error al crear usuario:', error);
+      console.error('Error al crear rol:', error);
       throw this.handleError(error);
     }
   },
 
   /**
-   * Actualizar un usuario existente
-   * @param {number} id - ID del usuario
-   * @param {Object} userData - Datos a actualizar
-   * @param {string} userData.name - Nombre del usuario (opcional)
-   * @param {string} userData.email - Email del usuario (opcional)
-   * @param {string} userData.password - Nueva contraseña (opcional)
-   * @param {string} userData.password_confirmation - Confirmación de contraseña (opcional)
+   * Actualizar un rol existente
+   * @param {number} id - ID del rol
+   * @param {Object} roleData - Datos a actualizar
+   * @param {string} roleData.descripcion - Nombre del rol (opcional)
+   * @param {string} roleData.estado - Estado del rol: 'activo' o 'suspendido' (opcional)
    * @returns {Promise} Respuesta de la API
    */
-  async updateUser(id, userData) {
+  async updateRole(id, roleData) {
     try {
-      const response = await apiClient.put(`/users/${id}`, userData);
+      const response = await apiClient.put(`/roles/${id}`, roleData);
       return response.data;
     } catch (error) {
-      console.error('Error al actualizar usuario:', error);
+      console.error('Error al actualizar rol:', error);
       throw this.handleError(error);
     }
   },
 
   /**
-   * Eliminar un usuario
-   * @param {number} id - ID del usuario a eliminar
+   * Eliminar un rol
+   * @param {number} id - ID del rol a eliminar
    * @returns {Promise} Respuesta de la API
    */
-  async deleteUser(id) {
+  async deleteRole(id) {
     try {
-      const response = await apiClient.delete(`/users/${id}`);
+      const response = await apiClient.delete(`/roles/${id}`);
       return response.data;
     } catch (error) {
-      console.error('Error al eliminar usuario:', error);
+      console.error('Error al eliminar rol:', error);
       throw this.handleError(error);
     }
   },
 
   /**
-   * Buscar usuarios por nombre o email
+   * Buscar roles por nombre o descripción
    * @param {string} query - Término de búsqueda
    * @param {number} page - Número de página (opcional)
    * @param {number} perPage - Elementos por página (opcional)
    * @returns {Promise} Respuesta de la API
    */
-  async searchUsers(query, page = 1, perPage = 15) {
+  async searchRoles(query, page = 1, perPage = 15) {
     try {
-      const response = await apiClient.get(`/users/search?q=${encodeURIComponent(query)}&page=${page}&per_page=${perPage}`);
+      const response = await apiClient.get(`/roles/search?query=${encodeURIComponent(query)}&page=${page}&per_page=${perPage}`);
       return response.data;
     } catch (error) {
-      console.error('Error al buscar usuarios:', error);
+      console.error('Error al buscar roles:', error);
       throw this.handleError(error);
     }
   },
@@ -167,7 +165,7 @@ export const userService = {
         case 404:
           return {
             type: 'not_found',
-            message: data.message || 'Usuario no encontrado',
+            message: data.message || 'Rol no encontrado',
           };
         case 422:
           return {
@@ -202,4 +200,4 @@ export const userService = {
   },
 };
 
-export default userService;
+export default roleService;

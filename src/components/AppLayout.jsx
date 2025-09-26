@@ -16,6 +16,9 @@ import {
   BarChartOutlined,
   CreditCardOutlined,
   SecurityScanOutlined,
+  BankOutlined,
+  FieldTimeOutlined,
+  TagOutlined,
 } from '@ant-design/icons';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -66,6 +69,30 @@ const AppLayout = ({ children }) => {
       icon: <TeamOutlined />,
       label: 'Usuarios',
       onClick: () => handleMobileNavigation('/usuarios'),
+    },
+    {
+      key: '/roles',
+      icon: <SecurityScanOutlined />,
+      label: 'Roles',
+      onClick: () => handleMobileNavigation('/roles'),
+    },
+    {
+      key: '/empresas',
+      icon: <BankOutlined />,
+      label: 'Empresas',
+      onClick: () => handleMobileNavigation('/empresas'),
+    },
+    {
+      key: '/tolerancias',
+      icon: <FieldTimeOutlined />,
+      label: 'Tolerancias',
+      onClick: () => handleMobileNavigation('/tolerancias'),
+    },
+    {
+      key: '/tipos-vehiculos',
+      icon: <TagOutlined />,
+      label: 'Tipos de Vehículos',
+      onClick: () => handleMobileNavigation('/tipos-vehiculos'),
     },
     {
       key: '/vehiculos',

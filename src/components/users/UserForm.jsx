@@ -139,7 +139,7 @@ const UserForm = ({ visible, onCancel, onSuccess, editingUser = null }) => {
       onCancel={handleCancel}
       footer={null}
       width={600}
-      destroyOnClose
+      destroyOnHidden
     >
       <Form
         form={form}

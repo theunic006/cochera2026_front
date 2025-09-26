@@ -3,13 +3,29 @@ import { theme } from 'antd';
 
 const ThemeContext = createContext();
 
-export const useTheme = () => {
+// Función helper para compatibilidad con Fast Refresh
+function useThemeHook() {
   const context = useContext(ThemeContext);
   if (!context) {
-    throw new Error('useTheme debe ser usado dentro de un ThemeProvider');
+    console.error('useTheme llamado fuera de ThemeProvider');
+    // Devolver valores por defecto en lugar de lanzar error
+    return {
+      isDarkMode: true,
+      toggleTheme: () => {},
+      antdTheme: {
+        algorithm: theme.darkAlgorithm,
+        token: {
+          colorPrimary: '#1890ff',
+          borderRadius: 8,
+          fontSize: 14,
+        }
+      }
+    };
   }
   return context;
-};
+}
+
+export const useTheme = useThemeHook;
 
 export const ThemeProvider = ({ children }) => {
   const [isDarkMode, setIsDarkMode] = useState(true); // Por defecto tema oscuro

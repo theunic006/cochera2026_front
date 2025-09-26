@@ -2,13 +2,25 @@ import { createContext, useContext, useState, useEffect } from 'react';
 
 const AuthContext = createContext();
 
-export const useAuth = () => {
+// Función helper para compatibilidad con Fast Refresh
+function useAuthHook() {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth debe ser usado dentro de un AuthProvider');
+    console.error('useAuth llamado fuera de AuthProvider');
+    // Devolver valores por defecto en lugar de lanzar error
+    return {
+      user: null,
+      token: null,
+      loading: false,
+      login: () => {},
+      logout: () => {},
+      isAuthenticated: () => false
+    };
   }
   return context;
-};
+}
+
+export const useAuth = useAuthHook;
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);

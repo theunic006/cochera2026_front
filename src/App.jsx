@@ -3,9 +3,14 @@ import { ConfigProvider, Spin } from 'antd';
 import esES from 'antd/locale/es_ES';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
+import ErrorBoundary from './components/ErrorBoundary';
 import Login from './components/Login';
 import Dashboard from './components/Dashboard';
 import UserList from './components/users/UserList';
+import RoleList from './components/roles/RoleList';
+import { CompanyList } from './components/companies';
+import { ToleranceList } from './components/tolerances';
+import { VehicleTypeList } from './components/vehicleTypes';
 import Vehiculos from './components/Vehiculos';
 import Reportes from './components/Reportes';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -50,6 +55,38 @@ const AppRouter = () => {
         element={
           <ProtectedRoute>
             <UserList />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/roles" 
+        element={
+          <ProtectedRoute>
+            <RoleList />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/empresas" 
+        element={
+          <ProtectedRoute>
+            <CompanyList />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/tolerancias" 
+        element={
+          <ProtectedRoute>
+            <ToleranceList />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/tipos-vehiculos" 
+        element={
+          <ProtectedRoute>
+            <VehicleTypeList />
           </ProtectedRoute>
         } 
       />
@@ -110,26 +147,38 @@ const AppRouter = () => {
   );
 };
 
-// Componente principal de la aplicación
+// Componente que usa los contextos
 const AppContent = () => {
   const { antdTheme } = useTheme();
 
   return (
-    <ConfigProvider locale={esES} theme={antdTheme}>
-      <AuthProvider>
-        <Router>
-          <AppRouter />
-        </Router>
-      </AuthProvider>
+    <ConfigProvider 
+      locale={esES} 
+      theme={antdTheme}
+      // Configuración específica para React 19
+      getPopupContainer={(triggerNode) => {
+        if (triggerNode) {
+          return triggerNode.parentNode || document.body;
+        }
+        return document.body;
+      }}
+    >
+      <Router>
+        <AppRouter />
+      </Router>
     </ConfigProvider>
   );
 };
 
 function App() {
   return (
-    <ThemeProvider>
-      <AppContent />
-    </ThemeProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <ThemeProvider>
+          <AppContent />
+        </ThemeProvider>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }
 

@@ -17,9 +17,6 @@ apiClient.interceptors.request.use(
     const token = localStorage.getItem('access_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
-      console.log('Token enviado:', `Bearer ${token.substring(0, 20)}...`);
-    } else {
-      console.warn('No se encontró token de acceso');
     }
     return config;
   },
@@ -42,113 +39,103 @@ apiClient.interceptors.response.use(
   }
 );
 
-export const userService = {
+export const toleranceService = {
   /**
-   * Obtener todos los usuarios con paginación
+   * Obtener todas las tolerancias con paginación
    * @param {number} page - Número de página (opcional)
    * @param {number} perPage - Elementos por página (opcional)
    * @returns {Promise} Respuesta de la API
    */
-  async getUsers(page = 1, perPage = 15) {
+  async getTolerances(page = 1, perPage = 15) {
     try {
-      const response = await apiClient.get(`/users?page=${page}&per_page=${perPage}`);
+      const response = await apiClient.get(`/tolerancias?page=${page}&per_page=${perPage}`);
       return response.data;
     } catch (error) {
-      console.error('Error al obtener usuarios:', error);
-      console.error('Status:', error.response?.status);
-      console.error('Data:', error.response?.data);
+      console.error('Error al obtener tolerancias:', error);
       throw this.handleError(error);
     }
   },
 
   /**
-   * Obtener un usuario específico por ID
-   * @param {number} id - ID del usuario
+   * Obtener una tolerancia específica por ID
+   * @param {number} id - ID de la tolerancia
    * @returns {Promise} Respuesta de la API
    */
-  async getUserById(id) {
+  async getToleranceById(id) {
     try {
-      const response = await apiClient.get(`/users/${id}`);
+      const response = await apiClient.get(`/tolerancias/${id}`);
       return response.data;
     } catch (error) {
-      console.error('Error al obtener usuario:', error);
+      console.error('Error al obtener tolerancia:', error);
       throw this.handleError(error);
     }
   },
 
   /**
-   * Crear un nuevo usuario
-   * @param {Object} userData - Datos del usuario
-   * @param {string} userData.name - Nombre del usuario
-   * @param {string} userData.email - Email del usuario
-   * @param {string} userData.password - Contraseña
-   * @param {string} userData.password_confirmation - Confirmación de contraseña
+   * Crear una nueva tolerancia
+   * @param {Object} toleranceData - Datos de la tolerancia
    * @returns {Promise} Respuesta de la API
    */
-  async createUser(userData) {
+  async createTolerance(toleranceData) {
     try {
-      const response = await apiClient.post('/users', userData);
+      const response = await apiClient.post('/tolerancias', toleranceData);
       return response.data;
     } catch (error) {
-      console.error('Error al crear usuario:', error);
+      console.error('Error al crear tolerancia:', error);
       throw this.handleError(error);
     }
   },
 
   /**
-   * Actualizar un usuario existente
-   * @param {number} id - ID del usuario
-   * @param {Object} userData - Datos a actualizar
-   * @param {string} userData.name - Nombre del usuario (opcional)
-   * @param {string} userData.email - Email del usuario (opcional)
-   * @param {string} userData.password - Nueva contraseña (opcional)
-   * @param {string} userData.password_confirmation - Confirmación de contraseña (opcional)
+   * Actualizar una tolerancia existente
+   * @param {number} id - ID de la tolerancia
+   * @param {Object} toleranceData - Datos actualizados
    * @returns {Promise} Respuesta de la API
    */
-  async updateUser(id, userData) {
+  async updateTolerance(id, toleranceData) {
     try {
-      const response = await apiClient.put(`/users/${id}`, userData);
+      const response = await apiClient.put(`/tolerancias/${id}`, toleranceData);
       return response.data;
     } catch (error) {
-      console.error('Error al actualizar usuario:', error);
+      console.error('Error al actualizar tolerancia:', error);
       throw this.handleError(error);
     }
   },
 
   /**
-   * Eliminar un usuario
-   * @param {number} id - ID del usuario a eliminar
+   * Eliminar una tolerancia
+   * @param {number} id - ID de la tolerancia
    * @returns {Promise} Respuesta de la API
    */
-  async deleteUser(id) {
+  async deleteTolerance(id) {
     try {
-      const response = await apiClient.delete(`/users/${id}`);
+      const response = await apiClient.delete(`/tolerancias/${id}`);
       return response.data;
     } catch (error) {
-      console.error('Error al eliminar usuario:', error);
+      console.error('Error al eliminar tolerancia:', error);
       throw this.handleError(error);
     }
   },
 
   /**
-   * Buscar usuarios por nombre o email
+   * Buscar tolerancias
    * @param {string} query - Término de búsqueda
    * @param {number} page - Número de página (opcional)
    * @param {number} perPage - Elementos por página (opcional)
    * @returns {Promise} Respuesta de la API
    */
-  async searchUsers(query, page = 1, perPage = 15) {
+  async searchTolerances(query, page = 1, perPage = 15) {
     try {
-      const response = await apiClient.get(`/users/search?q=${encodeURIComponent(query)}&page=${page}&per_page=${perPage}`);
+      const response = await apiClient.get(`/tolerancias/search?q=${encodeURIComponent(query)}&page=${page}&per_page=${perPage}`);
       return response.data;
     } catch (error) {
-      console.error('Error al buscar usuarios:', error);
+      console.error('Error al buscar tolerancias:', error);
       throw this.handleError(error);
     }
   },
 
   /**
-   * Manejar errores de la API
+   * Manejo centralizado de errores
    * @param {Object} error - Error de axios
    * @returns {Object} Error formateado
    */
@@ -161,45 +148,53 @@ export const userService = {
         case 400:
           return {
             type: 'validation',
-            message: data.message || 'Parámetros incorrectos',
-            errors: data.errors || {},
+            message: data.message || 'Datos inválidos',
+            errors: data.errors || {}
+          };
+        case 401:
+          return {
+            type: 'auth',
+            message: 'No autorizado. Por favor, inicia sesión nuevamente.'
+          };
+        case 403:
+          return {
+            type: 'forbidden',
+            message: 'No tienes permisos para realizar esta acción.'
           };
         case 404:
           return {
             type: 'not_found',
-            message: data.message || 'Usuario no encontrado',
+            message: 'Tolerancia no encontrada.'
           };
         case 422:
           return {
             type: 'validation',
             message: data.message || 'Errores de validación',
-            errors: data.errors || {},
+            errors: data.errors || {}
           };
         case 500:
           return {
-            type: 'server_error',
-            message: 'Error interno del servidor. Inténtalo más tarde.',
+            type: 'server',
+            message: 'Error interno del servidor. Inténtalo más tarde.'
           };
         default:
           return {
             type: 'unknown',
-            message: data.message || 'Ha ocurrido un error inesperado',
+            message: data.message || 'Ha ocurrido un error inesperado.'
           };
       }
     } else if (error.request) {
-      // La petición se hizo pero no se recibió respuesta
+      // La petición se hizo pero no hubo respuesta
       return {
         type: 'network',
-        message: 'Error de conexión. Verifica tu conexión a internet.',
+        message: 'Error de conexión. Verifica tu conexión a internet.'
       };
     } else {
       // Algo pasó al configurar la petición
       return {
         type: 'unknown',
-        message: 'Ha ocurrido un error inesperado',
+        message: error.message || 'Error desconocido'
       };
     }
-  },
+  }
 };
-
-export default userService;
