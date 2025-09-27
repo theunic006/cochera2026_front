@@ -12,7 +12,7 @@ import { CompanyList } from './components/companies';
 import { ToleranceList } from './components/tolerances';
 import { VehicleTypeList } from './components/vehicleTypes';
 import { VehicleList } from './components/vehicles';
-import OwnerList from './components/owners/OwnerList';
+import { OwnerList } from './components/owners';
 import Reportes from './components/Reportes';
 import ProtectedRoute from './components/ProtectedRoute';
 import "./App.css";

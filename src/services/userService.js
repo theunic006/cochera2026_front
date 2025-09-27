@@ -49,7 +49,7 @@ export const userService = {
    * @param {number} perPage - Elementos por página (opcional)
    * @returns {Promise} Respuesta de la API
    */
-  async getUsers(page = 1, perPage = 15) {
+  async getUsers(page = 1, perPage = 10) {
     try {
       const response = await apiClient.get(`/users?page=${page}&per_page=${perPage}`);
       return response.data;
@@ -137,7 +137,7 @@ export const userService = {
    * @param {number} perPage - Elementos por página (opcional)
    * @returns {Promise} Respuesta de la API
    */
-  async searchUsers(query, page = 1, perPage = 15) {
+  async searchUsers(query, page = 1, perPage = 10) {
     try {
       const response = await apiClient.get(`/users/search?q=${encodeURIComponent(query)}&page=${page}&per_page=${perPage}`);
       return response.data;

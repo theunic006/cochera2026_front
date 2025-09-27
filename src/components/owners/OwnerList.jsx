@@ -26,12 +26,15 @@ import {
   ReloadOutlined,
   ExclamationCircleOutlined,
   PhoneOutlined,
-  IdcardOutlined,
   MailOutlined,
+  HomeOutlined,
+  IdcardOutlined,
+  CarOutlined,
   EyeOutlined
 } from '@ant-design/icons';
 import { ownerService } from '../../services/ownerService';
 import OwnerForm from './OwnerForm';
+import OwnerVehiclesModal from './OwnerVehiclesModal';
 import AppLayout from '../AppLayout';
 
 const { Title, Text } = Typography;
@@ -41,6 +44,7 @@ const OwnerList = () => {
   // Estados principales
   const [loading, setLoading] = useState(false);
   const [owners, setOwners] = useState([]);
+  const [vehiclesCount, setVehiclesCount] = useState({});
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 15,
@@ -57,6 +61,8 @@ const OwnerList = () => {
   // Estados para modales
   const [ownerFormVisible, setOwnerFormVisible] = useState(false);
   const [editingOwner, setEditingOwner] = useState(null);
+  const [vehiclesModalVisible, setVehiclesModalVisible] = useState(false);
+  const [selectedOwner, setSelectedOwner] = useState(null);
   
   // Estados para responsividad
   const [isMobile, setIsMobile] = useState(false);
@@ -78,11 +84,6 @@ const OwnerList = () => {
     loadOwners();
   }, []);
 
-  // Debug - monitorear cambios en ownerFormVisible
-  useEffect(() => {
-    console.log('🚀 ownerFormVisible cambió a:', ownerFormVisible);
-  }, [ownerFormVisible]);
-
   /**
    * Cargar propietarios desde la API
    */
@@ -92,12 +93,19 @@ const OwnerList = () => {
       const response = await ownerService.getOwners(page, pageSize);
       
       if (response.success) {
+        // Actualizar paginación y propietarios de forma sincronizada
+        const newPagination = {
+          current: response.pagination.current_page,
+          pageSize: response.pagination.per_page,
+          total: response.pagination.total,
+        };
+        
+        // Actualizar ambos estados juntos
+        setPagination(newPagination);
         setOwners(response.data);
-        setPagination({
-          current: response.pagination?.current_page || page,
-          pageSize: response.pagination?.per_page || pageSize,
-          total: response.pagination?.total || response.data.length,
-        });
+        
+        // Cargar cantidad de vehículos para cada propietario
+        loadVehiclesCount(response.data);
       } else {
         message.error('Error al cargar propietarios');
       }
@@ -125,15 +133,18 @@ const OwnerList = () => {
     setLoading(true);
     
     try {
-      const response = await ownerService.searchOwners(value.trim(), 'nombres');
+      const response = await ownerService.searchOwners(value.trim(), page, pageSize);
       
       if (response.success) {
         setOwners(response.data);
         setPagination({
-          current: response.pagination?.current_page || 1,
-          pageSize: response.pagination?.per_page || pageSize,
-          total: response.pagination?.total || response.data.length,
+          current: response.pagination.current_page,
+          pageSize: response.pagination.per_page,
+          total: response.pagination.total,
         });
+        
+        // Cargar cantidad de vehículos para cada propietario
+        loadVehiclesCount(response.data);
       } else {
         message.error('Error en la búsqueda');
       }
@@ -148,26 +159,26 @@ const OwnerList = () => {
    * Manejar cambio de página y tamaño de página
    */
   const handleTableChange = (newPagination) => {
+    // No actualizar el estado aquí - dejamos que loadOwners lo haga
     if (isSearching && searchText) {
+      // Si estamos buscando, usar el endpoint de búsqueda
       handleSearch(searchText, newPagination.current, newPagination.pageSize);
     } else {
+      // Cargar propietarios normalmente
       loadOwners(newPagination.current, newPagination.pageSize);
     }
   };
 
   /**
-   * Crear nuevo propietario
+   * Abrir modal para crear propietario
    */
   const handleCreateOwner = () => {
-    console.log('🔥 Botón crear clickeado');
-    console.log('🔥 Estado actual ownerFormVisible:', ownerFormVisible);
     setEditingOwner(null);
     setOwnerFormVisible(true);
-    console.log('🔥 Estado ownerFormVisible actualizado a true');
   };
 
   /**
-   * Editar propietario
+   * Abrir modal para editar propietario
    */
   const handleEditOwner = (owner) => {
     setEditingOwner(owner);
@@ -177,13 +188,12 @@ const OwnerList = () => {
   /**
    * Eliminar propietario
    */
-  const handleDeleteOwner = async (owner) => {
+  const handleDeleteOwner = async (ownerId, ownerName) => {
     try {
-      const response = await ownerService.deleteOwner(owner.id);
+      const response = await ownerService.deleteOwner(ownerId);
       
       if (response.success) {
-        message.success('Propietario eliminado exitosamente');
-        
+        message.success(`Propietario ${ownerName} eliminado exitosamente`);
         // Recargar la lista
         if (isSearching && searchText) {
           handleSearch(searchText);
@@ -213,52 +223,125 @@ const OwnerList = () => {
     }
   };
 
+  /**
+   * Cargar cantidad de vehículos para todos los propietarios
+   */
+  const loadVehiclesCount = async (ownersList) => {
+    const counts = {};
+    const promises = ownersList.map(async (owner) => {
+      try {
+        const response = await ownerService.getOwnerVehicles(owner.id);
+        if (response.success && response.data) {
+          counts[owner.id] = response.data.vehiculos?.length || 0;
+        } else {
+          counts[owner.id] = 0;
+        }
+      } catch (error) {
+        console.error(`Error loading vehicles for owner ${owner.id}:`, error);
+        counts[owner.id] = 0;
+      }
+    });
+    
+    await Promise.all(promises);
+    setVehiclesCount(counts);
+  };
+
+  /**
+   * Abrir modal de vehículos
+   */
+  const handleViewVehicles = (owner) => {
+    setSelectedOwner(owner);
+    setVehiclesModalVisible(true);
+  };
+
   // Configuración de columnas de la tabla
   const columns = [
     {
+      title: '#',
+      key: 'index',
+      width: 60,
+      render: (_, __, index) => (
+        <div style={{ textAlign: 'center', fontWeight: 'bold', color: '#722ed1' }}>
+          {(pagination.current - 1) * pagination.pageSize + index + 1}
+        </div>
+      ),
+    },
+    {
       title: 'Propietario',
-      dataIndex: 'nombres',
-      key: 'nombres',
+      dataIndex: 'nombre_completo',
+      key: 'nombre_completo',
       render: (text, record) => (
         <Space>
           <Avatar icon={<UserOutlined />} />
           <div>
-            <div style={{ fontWeight: 'bold', color: '#1890ff' }}>
-              {`${text} ${record.apellidos}`}
+            <div style={{ fontWeight: 'bold', color: '#1890ff' }}>{text}</div>
+            <div style={{ fontSize: '12px', color: '#666' }}>
+              <Space size="small">
+                <IdcardOutlined style={{ fontSize: '10px' }} />
+                {record.documento}
+              </Space>
             </div>
-            <div style={{ fontSize: '12px', color: '#666' }}>{record.email}</div>
           </div>
         </Space>
       ),
     },
     {
-      title: 'Documento',
-      dataIndex: 'documento',
-      key: 'documento',
-      width: 120,
-      render: (documento) => (
-        <Tag color="orange">{documento}</Tag>
-      ),
-    },
-    {
-      title: 'Teléfono',
-      dataIndex: 'telefono',
-      key: 'telefono',
-      width: 130,
-      render: (telefono) => (
-        <Tag color="green">{telefono}</Tag>
+      title: 'Contacto',
+      key: 'contacto',
+      width: 200,
+      render: (_, record) => (
+        <div>
+          <div style={{ fontSize: '12px', marginBottom: '4px' }}>
+            <Space size="small">
+              <PhoneOutlined style={{ fontSize: '10px' }} />
+              {record.telefono}
+            </Space>
+          </div>
+          <div style={{ fontSize: '12px', color: '#666' }}>
+            <Space size="small">
+              <MailOutlined style={{ fontSize: '10px' }} />
+              {record.email}
+            </Space>
+          </div>
+        </div>
       ),
     },
     {
       title: 'Dirección',
       dataIndex: 'direccion',
       key: 'direccion',
-      ellipsis: true,
-      render: (direccion) => (
-        <Tooltip title={direccion}>
-          <span>{direccion}</span>
-        </Tooltip>
+      width: 200,
+      render: (text) => (
+        <div style={{ fontSize: '12px' }}>
+          <Space size="small">
+            <HomeOutlined style={{ fontSize: '10px' }} />
+            {text}
+          </Space>
+        </div>
       ),
+    },
+    {
+      title: 'Vehículos',
+      key: 'vehicles',
+      width: 120,
+      render: (_, record) => {
+        const count = vehiclesCount[record.id] || 0;
+        return (
+          <Button
+            type={count > 0 ? 'primary' : 'default'}
+            size="small"
+            icon={<CarOutlined />}
+            onClick={() => handleViewVehicles(record)}
+            style={{ 
+              minWidth: '60px',
+              fontSize: '12px',
+              fontWeight: 'bold'
+            }}
+          >
+            {count} vehículo{count !== 1 ? 's' : ''}
+          </Button>
+        );
+      },
     },
     {
       title: 'Registrado',
@@ -271,7 +354,16 @@ const OwnerList = () => {
           month: '2-digit',
           day: '2-digit',
         });
-        return <span style={{ fontSize: '12px', color: '#666' }}>{formattedDate}</span>;
+        const formattedTime = new Date(date).toLocaleTimeString('es-ES', {
+          hour: '2-digit',
+          minute: '2-digit',
+        });
+        return (
+          <div>
+            <div>{formattedDate}</div>
+            <div style={{ fontSize: '12px', color: '#666' }}>{formattedTime}</div>
+          </div>
+        );
       },
     },
     {
@@ -282,31 +374,29 @@ const OwnerList = () => {
         <Space size="small">
           <Tooltip title="Editar">
             <Button
-              type="link"
-              size="small"
+              type="text"
               icon={<EditOutlined />}
               onClick={() => handleEditOwner(record)}
               style={{ color: '#1890ff' }}
             />
           </Tooltip>
-          
-          <Tooltip title="Eliminar">
-            <Popconfirm
-              title="¿Eliminar propietario?"
-              description={`¿Está seguro de eliminar a ${record.nombres} ${record.apellidos}?`}
-              onConfirm={() => handleDeleteOwner(record)}
-              okText="Sí"
-              cancelText="No"
-              icon={<ExclamationCircleOutlined style={{ color: 'red' }} />}
-            >
+          <Popconfirm
+            title="¿Eliminar propietario?"
+            description={`¿Estás seguro de eliminar a ${record.nombre_completo}?`}
+            onConfirm={() => handleDeleteOwner(record.id, record.nombre_completo)}
+            okText="Sí, eliminar"
+            cancelText="Cancelar"
+            okType="danger"
+            icon={<ExclamationCircleOutlined style={{ color: 'red' }} />}
+          >
+            <Tooltip title="Eliminar">
               <Button
-                type="link"
-                size="small"
+                type="text"
                 icon={<DeleteOutlined />}
-                style={{ color: '#ff4d4f' }}
+                danger
               />
-            </Popconfirm>
-          </Tooltip>
+            </Tooltip>
+          </Popconfirm>
         </Space>
       ),
     },
@@ -314,8 +404,6 @@ const OwnerList = () => {
 
   // Estadísticas calculadas
   const totalOwners = pagination.total;
-  const ownersWithPhone = owners.filter(owner => owner.telefono).length;
-  const ownersWithEmail = owners.filter(owner => owner.email).length;
 
   return (
     <AppLayout>
@@ -329,26 +417,6 @@ const OwnerList = () => {
                 value={totalOwners}
                 prefix={<TeamOutlined />}
                 valueStyle={{ color: '#1890ff' }}
-              />
-            </Card>
-          </Col>
-          <Col xs={12} sm={8} lg={6}>
-            <Card>
-              <Statistic
-                title="Con Teléfono"
-                value={ownersWithPhone}
-                prefix={<PhoneOutlined />}
-                valueStyle={{ color: '#52c41a' }}
-              />
-            </Card>
-          </Col>
-          <Col xs={12} sm={8} lg={6}>
-            <Card>
-              <Statistic
-                title="Con Email"
-                value={ownersWithEmail}
-                prefix={<MailOutlined />}
-                valueStyle={{ color: '#faad14' }}
               />
             </Card>
           </Col>
@@ -427,6 +495,17 @@ const OwnerList = () => {
           }}
           onSuccess={handleFormSuccess}
           editingOwner={editingOwner}
+        />
+
+        {/* Modal de vehículos */}
+        <OwnerVehiclesModal
+          visible={vehiclesModalVisible}
+          onCancel={() => {
+            setVehiclesModalVisible(false);
+            setSelectedOwner(null);
+          }}
+          ownerId={selectedOwner?.id}
+          ownerName={selectedOwner?.nombre_completo}
         />
       </div>
     </AppLayout>

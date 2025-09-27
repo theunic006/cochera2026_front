@@ -1,29 +1,25 @@
-import React, { useState, useEffect } from 'react';
-import {
-  Modal,
-  Form,
-  Input,
-  Button,
-  message,
-  Space,
-  Typography,
+import { useState, useEffect } from 'react';
+import { 
+  Modal, 
+  Form, 
+  Input, 
+  Button, 
+  Space, 
+  message, 
   Alert,
   Row,
   Col
 } from 'antd';
-import {
-  UserOutlined,
+import { 
+  UserOutlined, 
+  MailOutlined, 
   PhoneOutlined,
-  IdcardOutlined,
-  MailOutlined
+  HomeOutlined,
+  IdcardOutlined
 } from '@ant-design/icons';
 import { ownerService } from '../../services/ownerService';
 
-const { Title } = Typography;
-
 const OwnerForm = ({ visible, onCancel, onSuccess, editingOwner = null }) => {
-  console.log('OwnerForm renderizado - visible:', visible, 'editingOwner:', editingOwner);
-  
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
@@ -57,48 +53,60 @@ const OwnerForm = ({ visible, onCancel, onSuccess, editingOwner = null }) => {
    * Manejar envío del formulario
    */
   const handleSubmit = async (values) => {
-    console.log('🔥 handleSubmit llamado con valores:', values);
-    console.log('🔥 isEditing:', isEditing);
-    
     setLoading(true);
     setErrors({});
-    
+
     try {
       let response;
-      
+
       if (isEditing) {
         // Actualizar propietario existente
-        console.log('🔥 Actualizando propietario:', editingOwner.id);
-        response = await ownerService.updateOwner(editingOwner.id, values);
-        message.success('Propietario actualizado exitosamente');
+        response = await ownerService.updateOwner(editingOwner.id, {
+          nombres: values.nombres,
+          apellidos: values.apellidos,
+          documento: values.documento,
+          telefono: values.telefono,
+          email: values.email,
+          direccion: values.direccion,
+        });
       } else {
         // Crear nuevo propietario
-        console.log('🔥 Creando nuevo propietario');
-        response = await ownerService.createOwner(values);
-        console.log('🔥 Respuesta del servicio:', response);
-        message.success('Propietario creado exitosamente');
+        response = await ownerService.createOwner({
+          nombres: values.nombres,
+          apellidos: values.apellidos,
+          documento: values.documento,
+          telefono: values.telefono,
+          email: values.email,
+          direccion: values.direccion,
+        });
       }
 
-      // Si fue exitoso, llamar onSuccess y cerrar modal
-      if (response && response.success) {
-        console.log('🔥 Creación exitosa, cerrando modal');
+      if (response.success) {
+        message.success(
+          isEditing 
+            ? 'Propietario actualizado exitosamente' 
+            : 'Propietario creado exitosamente'
+        );
         form.resetFields();
         onSuccess();
       } else {
-        console.log('🔥 Respuesta no exitosa:', response);
+        message.error('Error al procesar la solicitud');
       }
     } catch (error) {
-      console.error('🔥 Error saving owner:', error);
-      console.log('🔥 Error completo:', JSON.stringify(error, null, 2));
+      console.error('Error en formulario:', error);
       
-      // Manejar errores de validación del servidor
-      if (error.errors && Object.keys(error.errors).length > 0) {
-        console.log('🔥 Errores de validación:', error.errors);
+      if (error.type === 'validation' && error.errors) {
+        // Errores de validación del backend
         setErrors(error.errors);
-        message.error('Por favor corrige los errores en el formulario');
+        
+        // Mostrar errores en los campos del formulario
+        const formErrors = Object.keys(error.errors).map(field => ({
+          name: field,
+          errors: error.errors[field],
+        }));
+        form.setFields(formErrors);
       } else {
-        console.log('🔥 Error general:', error.message);
-        message.error(error.message || 'Error al guardar propietario');
+        message.error(error.message || 'Error al procesar la solicitud');
       }
     } finally {
       setLoading(false);
@@ -106,7 +114,7 @@ const OwnerForm = ({ visible, onCancel, onSuccess, editingOwner = null }) => {
   };
 
   /**
-   * Manejar cancelación del modal
+   * Manejar cancelación
    */
   const handleCancel = () => {
     form.resetFields();
@@ -119,153 +127,165 @@ const OwnerForm = ({ visible, onCancel, onSuccess, editingOwner = null }) => {
       title={isEditing ? 'Editar Propietario' : 'Crear Nuevo Propietario'}
       open={visible}
       onCancel={handleCancel}
-      width={600}
       footer={null}
+      width={800}
+      destroyOnHidden
     >
-      {/* Mostrar errores generales si existen */}
-      {Object.keys(errors).length > 0 && (
-        <Alert
-          message="Errores en el formulario"
-          description="Por favor corrige los siguientes errores:"
-          type="error"
-          showIcon
-          style={{ marginBottom: 16 }}
-        />
-      )}
-
       <Form
         form={form}
         layout="vertical"
         onFinish={handleSubmit}
         autoComplete="off"
-        disabled={loading}
       >
+        {/* Alerta de errores generales */}
+        {Object.keys(errors).length > 0 && (
+          <Alert
+            message="Errores de validación"
+            description={
+              <ul style={{ margin: 0, paddingLeft: 20 }}>
+                {Object.entries(errors).map(([field, fieldErrors]) => (
+                  <li key={field}>
+                    <strong>
+                      {field === 'nombres' ? 'Nombres' :
+                       field === 'apellidos' ? 'Apellidos' :
+                       field === 'documento' ? 'Documento' :
+                       field === 'telefono' ? 'Teléfono' :
+                       field === 'email' ? 'Email' :
+                       field === 'direccion' ? 'Dirección' : field}:
+                    </strong>{' '}
+                    {Array.isArray(fieldErrors) ? fieldErrors.join(', ') : fieldErrors}
+                  </li>
+                ))}
+              </ul>
+            }
+            type="error"
+            showIcon
+            style={{ marginBottom: 16 }}
+          />
+        )}
+
         <Row gutter={16}>
-          <Col span={12}>
+          <Col xs={24} sm={12}>
+            {/* Campo Nombres */}
             <Form.Item
               label="Nombres"
               name="nombres"
               rules={[
-                { required: true, message: 'Los nombres son obligatorios' },
+                { required: true, message: 'Los nombres son requeridos' },
+                { max: 255, message: 'Los nombres no pueden exceder 255 caracteres' },
                 { min: 2, message: 'Los nombres deben tener al menos 2 caracteres' },
-                { max: 100, message: 'Los nombres no pueden exceder 100 caracteres' }
               ]}
-              validateStatus={errors.nombres ? 'error' : ''}
-              help={errors.nombres ? errors.nombres[0] : ''}
             >
               <Input
-                placeholder="Ingrese los nombres"
                 prefix={<UserOutlined />}
+                placeholder="Ingresa los nombres"
+                size="large"
               />
             </Form.Item>
           </Col>
-          
-          <Col span={12}>
+          <Col xs={24} sm={12}>
+            {/* Campo Apellidos */}
             <Form.Item
               label="Apellidos"
               name="apellidos"
               rules={[
-                { required: true, message: 'Los apellidos son obligatorios' },
+                { required: true, message: 'Los apellidos son requeridos' },
+                { max: 255, message: 'Los apellidos no pueden exceder 255 caracteres' },
                 { min: 2, message: 'Los apellidos deben tener al menos 2 caracteres' },
-                { max: 100, message: 'Los apellidos no pueden exceder 100 caracteres' }
               ]}
-              validateStatus={errors.apellidos ? 'error' : ''}
-              help={errors.apellidos ? errors.apellidos[0] : ''}
             >
               <Input
-                placeholder="Ingrese los apellidos"
                 prefix={<UserOutlined />}
+                placeholder="Ingresa los apellidos"
+                size="large"
               />
             </Form.Item>
           </Col>
         </Row>
 
         <Row gutter={16}>
-          <Col span={12}>
+          <Col xs={24} sm={12}>
+            {/* Campo Documento */}
             <Form.Item
               label="Documento"
               name="documento"
               rules={[
-                { required: true, message: 'El documento es obligatorio' },
-                { 
-                  pattern: /^[0-9]+$/,
-                  message: 'El documento debe contener solo números'
-                },
-                { min: 6, message: 'El documento debe tener al menos 6 dígitos' },
-                { max: 20, message: 'El documento no puede exceder 20 dígitos' }
+                { required: true, message: 'El documento es requerido' },
+                { max: 20, message: 'El documento no puede exceder 20 caracteres' },
+                { min: 5, message: 'El documento debe tener al menos 5 caracteres' },
+                { pattern: /^[0-9]+$/, message: 'El documento debe contener solo números' },
               ]}
-              validateStatus={errors.documento ? 'error' : ''}
-              help={errors.documento ? errors.documento[0] : ''}
             >
               <Input
-                placeholder="Número de documento"
                 prefix={<IdcardOutlined />}
+                placeholder="Número de documento"
+                size="large"
               />
             </Form.Item>
           </Col>
-          
-          <Col span={12}>
+          <Col xs={24} sm={12}>
+            {/* Campo Teléfono */}
             <Form.Item
               label="Teléfono"
               name="telefono"
               rules={[
-                { required: true, message: 'El teléfono es obligatorio' },
-                { 
-                  pattern: /^[0-9\-\+\(\)\s]+$/,
-                  message: 'Formato de teléfono inválido'
-                },
+                { required: true, message: 'El teléfono es requerido' },
+                { max: 20, message: 'El teléfono no puede exceder 20 caracteres' },
                 { min: 7, message: 'El teléfono debe tener al menos 7 caracteres' },
-                { max: 20, message: 'El teléfono no puede exceder 20 caracteres' }
+                { pattern: /^[0-9-+\s()]+$/, message: 'Formato de teléfono inválido' },
               ]}
-              validateStatus={errors.telefono ? 'error' : ''}
-              help={errors.telefono ? errors.telefono[0] : ''}
             >
               <Input
-                placeholder="Número de teléfono"
                 prefix={<PhoneOutlined />}
+                placeholder="Número de teléfono"
+                size="large"
               />
             </Form.Item>
           </Col>
         </Row>
 
-        <Form.Item
-          label="Email"
-          name="email"
-          rules={[
-            { required: true, message: 'El email es obligatorio' },
-            { type: 'email', message: 'Formato de email inválido' },
-            { max: 150, message: 'El email no puede exceder 150 caracteres' }
-          ]}
-          validateStatus={errors.email ? 'error' : ''}
-          help={errors.email ? errors.email[0] : ''}
-        >
-          <Input
-            placeholder="Correo electrónico"
-            prefix={<MailOutlined />}
-          />
-        </Form.Item>
+        <Row gutter={16}>
+          <Col xs={24} sm={12}>
+            {/* Campo Email */}
+            <Form.Item
+              label="Correo electrónico"
+              name="email"
+              rules={[
+                { required: true, message: 'El email es requerido' },
+                { type: 'email', message: 'Ingresa un email válido' },
+                { max: 255, message: 'El email no puede exceder 255 caracteres' },
+              ]}
+            >
+              <Input
+                prefix={<MailOutlined />}
+                placeholder="usuario@ejemplo.com"
+                size="large"
+              />
+            </Form.Item>
+          </Col>
+          <Col xs={24} sm={12}>
+            {/* Campo Dirección */}
+            <Form.Item
+              label="Dirección"
+              name="direccion"
+              rules={[
+                { required: true, message: 'La dirección es requerida' },
+                { max: 500, message: 'La dirección no puede exceder 500 caracteres' },
+                { min: 10, message: 'La dirección debe tener al menos 10 caracteres' },
+              ]}
+            >
+              <Input
+                prefix={<HomeOutlined />}
+                placeholder="Dirección completa"
+                size="large"
+              />
+            </Form.Item>
+          </Col>
+        </Row>
 
-        <Form.Item
-          label="Dirección"
-          name="direccion"
-          rules={[
-            { required: true, message: 'La dirección es obligatoria' },
-            { min: 10, message: 'La dirección debe tener al menos 10 caracteres' },
-            { max: 200, message: 'La dirección no puede exceder 200 caracteres' }
-          ]}
-          validateStatus={errors.direccion ? 'error' : ''}
-          help={errors.direccion ? errors.direccion[0] : ''}
-        >
-          <Input.TextArea
-            placeholder="Dirección completa"
-            rows={3}
-            showCount
-            maxLength={200}
-          />
-        </Form.Item>
-
-        <div style={{ textAlign: 'right', marginTop: '24px' }}>
-          <Space>
+        {/* Botones de acción */}
+        <Form.Item style={{ marginTop: 24, marginBottom: 0 }}>
+          <Space style={{ width: '100%', justifyContent: 'flex-end' }}>
             <Button onClick={handleCancel} disabled={loading}>
               Cancelar
             </Button>
@@ -273,15 +293,12 @@ const OwnerForm = ({ visible, onCancel, onSuccess, editingOwner = null }) => {
               type="primary" 
               htmlType="submit" 
               loading={loading}
-              style={{ 
-                backgroundColor: '#722ed1',
-                borderColor: '#722ed1'
-              }}
+              size="large"
             >
-              {isEditing ? 'Actualizar' : 'Crear'}
+              {isEditing ? 'Actualizar Propietario' : 'Crear Propietario'}
             </Button>
           </Space>
-        </div>
+        </Form.Item>
       </Form>
     </Modal>
   );

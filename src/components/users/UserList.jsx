@@ -39,11 +39,11 @@ const UserList = () => {
   const [users, setUsers] = useState([]);
   const [pagination, setPagination] = useState({
     current: 1,
-    pageSize: 15,
+    pageSize: 10,
     total: 0,
     showSizeChanger: true,
     showQuickJumper: true,
-    pageSizeOptions: ['10', '15', '20', '50', '100'],
+    pageSizeOptions: ['10', '15', '20', '30', '50', '100'],
   });
   
   // Estados para búsqueda y filtros
@@ -77,7 +77,7 @@ const UserList = () => {
   /**
    * Cargar usuarios desde la API
    */
-  const loadUsers = async (page = 1, pageSize = 15) => {
+  const loadUsers = async (page = 1, pageSize = 10) => {
     setLoading(true);
     try {
       const response = await userService.getUsers(page, pageSize);
@@ -213,6 +213,16 @@ const UserList = () => {
 
   // Configuración de columnas de la tabla
   const columns = [
+    {
+      title: '#',
+      key: 'index',
+      width: 60,
+      render: (_, __, index) => (
+        <div style={{ textAlign: 'center', fontWeight: 'bold', color: '#722ed1' }}>
+          {(pagination.current - 1) * pagination.pageSize + index + 1}
+        </div>
+      ),
+    },
     {
       title: 'Usuario',
       dataIndex: 'name',
@@ -391,7 +401,7 @@ const UserList = () => {
               total: pagination.total,
               showSizeChanger: true,
               showQuickJumper: !isMobile,
-              pageSizeOptions: ['10', '15', '20', '50', '100'],
+              pageSizeOptions: ['10', '15', '20', '30', '50', '100'],
               showTotal: (total, range) => 
                 `${range[0]}-${range[1]} de ${total} usuarios`,
               size: 'default',
