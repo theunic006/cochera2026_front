@@ -15,6 +15,7 @@ import { VehicleList } from './components/vehicles';
 import { OwnerList } from './components/owners';
 import Reportes from './components/Reportes';
 import ProtectedRoute from './components/ProtectedRoute';
+import RegistroList from './components/registros/RegistroList';
 import "./App.css";
 
 // Componente para manejar la redirección inicial
@@ -64,6 +65,14 @@ const AppRouter = () => {
         element={
           <ProtectedRoute>
             <RoleList />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/registros" 
+        element={
+          <ProtectedRoute>
+            <RegistroList />
           </ProtectedRoute>
         } 
       />

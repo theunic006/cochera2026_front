@@ -77,6 +77,12 @@ const AppLayout = ({ children }) => {
       onClick: () => handleMobileNavigation('/roles'),
     },
     {
+      key: '/registros',
+      icon: <FileTextOutlined />,
+      label: 'Registros',
+      onClick: () => handleMobileNavigation('/registros'),
+    },
+    {
       key: '/empresas',
       icon: <BankOutlined />,
       label: 'Empresas',
