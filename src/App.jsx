@@ -16,6 +16,7 @@ import { OwnerList } from './components/owners';
 import Reportes from './components/Reportes';
 import ProtectedRoute from './components/ProtectedRoute';
 import RegistroList from './components/registros/RegistroList';
+import IngresoList from './components/ingresos/IngresoList';
 import "./App.css";
 
 // Componente para manejar la redirección inicial
@@ -73,6 +74,14 @@ const AppRouter = () => {
         element={
           <ProtectedRoute>
             <RegistroList />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/ingresos" 
+        element={
+          <ProtectedRoute>
+            <IngresoList />
           </ProtectedRoute>
         } 
       />

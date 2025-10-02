@@ -3,10 +3,12 @@ import { Typography, Form, Input, List, Card, message, Row, Col, Statistic, Butt
 import { UserOutlined, PlusOutlined, ReloadOutlined, CarOutlined, TeamOutlined, DollarOutlined, ClockCircleOutlined } from '@ant-design/icons';
 import axios from "axios";
 import AppLayout from './AppLayout';
+import { useAuthInfo } from '../hooks/useAuthInfo';
 
 const { Title, Text } = Typography;
 
 const Dashboard = () => {
+  const { user, empresa } = useAuthInfo();
   const [suscribers, setSuscribers] = useState([]);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -71,6 +73,26 @@ const Dashboard = () => {
             Resumen general del sistema de gestión de cochera
           </Text>
         </div>
+
+        {/* Usuario y empresa logueada */}
+        <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+          <Col xs={24} md={12} lg={8}>
+            <Card>
+              <Title level={5} style={{ marginBottom: 0 }}>Usuario logueado</Title>
+              <Text strong>{user?.name || user?.nombre || 'Sin usuario'}</Text>
+              <br />
+              <Text type="secondary">Email: {user?.email || '---'}</Text>
+            </Card>
+          </Col>
+          <Col xs={24} md={12} lg={8}>
+            <Card>
+              <Title level={5} style={{ marginBottom: 0 }}>Empresa</Title>
+              <Text strong>{empresa?.nombre || empresa?.name || 'Sin empresa'}</Text>
+              <br />
+              <Text type="secondary">RUC: {empresa?.ruc || '---'}</Text>
+            </Card>
+          </Col>
+        </Row>
 
         {/* Tarjetas de estadísticas */}
         <Row gutter={[24, 24]} style={{ marginBottom: '24px' }}>

@@ -19,6 +19,7 @@ import {
   BankOutlined,
   FieldTimeOutlined,
   TagOutlined,
+  DollarOutlined,
 } from '@ant-design/icons';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -81,6 +82,12 @@ const AppLayout = ({ children }) => {
       icon: <FileTextOutlined />,
       label: 'Registros',
       onClick: () => handleMobileNavigation('/registros'),
+    },
+    {
+      key: '/ingresos',
+      icon: <DollarOutlined />,
+      label: 'Ingresos',
+      onClick: () => handleMobileNavigation('/ingresos'),
     },
     {
       key: '/empresas',

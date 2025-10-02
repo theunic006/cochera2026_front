@@ -154,6 +154,7 @@ const VehicleListSimple = () => {
   };
 
   const columns = [
+
     {
       title: '#',
       key: 'index',
@@ -228,6 +229,19 @@ const VehicleListSimple = () => {
           <CarOutlined style={{ marginRight: '4px' }} />
           {tipo_vehiculo?.nombre || 'Sin tipo'}
         </Tag>
+      ),
+    },
+    {
+      title: 'Veces Ingresado',
+      dataIndex: 'frecuencia',
+      key: 'frecuencia',
+      align: 'center',
+      width: 120,
+      render: (frecuencia) => (
+        <Statistic
+          value={frecuencia || 0}
+          valueStyle={{ color: '#1890ff', fontWeight: 700, fontSize: 18 }}
+        />
       ),
     },
     {

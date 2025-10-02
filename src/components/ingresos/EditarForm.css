@@ -1,0 +1,90 @@
+/* Panel de observaciones en EditarForm */
+.observaciones-panel {
+  margin: 12px 0 18px 0;
+  background: #181828;
+  border-radius: 8px;
+  padding: 12px;
+}
+.observaciones-titulo {
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 6px;
+}
+.observacion-item {
+  margin-bottom: 8px;
+  color: #fff;
+  border-left: 3px solid #722ed1;
+  padding-left: 8px;
+  cursor: pointer;
+  background: #23234a;
+  border-radius: 4px;
+  transition: background 0.2s, border-color 0.2s;
+}
+.observacion-item:hover {
+  background: #2d2d5a;
+  border-left: 3px solid #ffec3d;
+}
+.observacion-tipo-desc {
+  font-weight: 500;
+  font-size: 13px;
+}
+.observacion-tipo {
+  color: #ffec3d;
+  margin-right: 8px;
+}
+.observacion-meta {
+  font-size: 11px;
+  opacity: 0.7;
+}
+.form-row-group {
+  display: flex;
+  align-items: center;
+  margin-bottom: 18px;
+}
+.form-label {
+  min-width: 120px;
+  font-weight: 500;
+  margin-right: 12px;
+  color: #fff;
+}
+.form-item-inline {
+  flex: 1;
+  margin-bottom: 0 !important;
+}
+@media (max-width: 600px) {
+  .form-row-group {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .form-label {
+    margin-bottom: 4px;
+    min-width: 0;
+  }
+}
+
+/* Botón de placa responsivo para tabla */
+.placa-btn-responsive {
+  padding: 3px 12px;
+  min-width: 80px;
+  border-radius: 8px;
+  font-weight: 600;
+  color: #1890ff;
+  border: 1px solid #1890ff;
+  background: transparent;
+  transition: background 0.2s, color 0.2s;
+  text-align: center;
+  margin: 0 auto;
+  display: block;
+}
+.placa-btn-responsive:hover {
+  background: #1890ff;
+  color: #fff;
+}
+@media (max-width: 600px) {
+  .placa-btn-responsive {
+    width: 100%;
+    min-width: 0;
+    font-size: 16px;
+    margin-bottom: 4px;
+  }
+}
