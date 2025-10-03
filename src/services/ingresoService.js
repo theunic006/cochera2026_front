@@ -16,10 +16,7 @@ apiClient.interceptors.request.use(
     const token = localStorage.getItem('access_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
-      console.log('Token enviado para roles:', `Bearer ${token.substring(0, 20)}...`);
-    } else {
-      console.warn('No se encontró token de acceso para roles');
-    }
+    } 
     return config;
   },
   (error) => {

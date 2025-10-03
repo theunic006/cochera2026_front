@@ -8,7 +8,8 @@ import {
   message, 
   Alert,
   Row,
-  Col
+  Col,
+  Select,
 } from 'antd';
 import { 
   UserOutlined, 
@@ -17,24 +18,37 @@ import {
   EyeInvisibleOutlined,
   EyeTwoTone
 } from '@ant-design/icons';
+
+import { roleService } from '../../services/roleService';
 import { userService } from '../../services/userService';
+import { useAuthInfo } from '../../hooks/useAuthInfo';
 
 const UserForm = ({ visible, onCancel, onSuccess, editingUser = null }) => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [roles, setRoles] = useState([]);
+  const { userInfo } = useAuthInfo();
 
   // Determinar si es edición o creación
   const isEditing = !!editingUser;
 
   // Efecto para llenar el formulario al editar
   useEffect(() => {
+    // Cargar roles al abrir el modal
     if (visible) {
+      roleService.getRoles && roleService.getRoles().then((data) => {
+        // data.data es el array de roles
+        setRoles(Array.isArray(data?.data) ? data.data : []);
+        console.log('Roles cargados:', data);
+      });
       if (isEditing && editingUser) {
         // Llenar formulario con datos del usuario a editar
         form.setFieldsValue({
           name: editingUser.name,
           email: editingUser.email,
+          idrol: editingUser.idrol,
+          estado: editingUser.estado,
         });
       } else {
         // Limpiar formulario para crear nuevo usuario
@@ -60,20 +74,24 @@ const UserForm = ({ visible, onCancel, onSuccess, editingUser = null }) => {
         const updateData = {
           name: values.name,
           email: values.email,
+          idrol: values.idrol,
+          estado: values.estado,
+          id_company: userInfo?.id_company || null,
         };
-
         // Solo incluir contraseña si se proporcionó
         if (values.password) {
           updateData.password = values.password;
           updateData.password_confirmation = values.password_confirmation;
         }
-
         response = await userService.updateUser(editingUser.id, updateData);
       } else {
         // Crear nuevo usuario
         response = await userService.createUser({
           name: values.name,
           email: values.email,
+          idrol: values.idrol,
+          estado: values.estado,
+          id_company: userInfo?.id_company || null,
           password: values.password,
           password_confirmation: values.password_confirmation,
         });
@@ -184,6 +202,39 @@ const UserForm = ({ visible, onCancel, onSuccess, editingUser = null }) => {
                 placeholder="Ingresa el nombre completo"
                 size="large"
               />
+            </Form.Item>
+          </Col>
+        </Row>
+        <Row gutter={16}>
+          <Col span={12}>
+            {/* Select de Roles */}
+            <Form.Item
+              label="Rol"
+              name="idrol"
+              rules={[{ required: true, message: 'Selecciona un rol' }]}
+            >
+              <Select placeholder="Selecciona un rol">
+                {roles.map((rol) => (
+                  <Select.Option key={rol.id} value={rol.id}>
+                    {rol.descripcion}
+                  </Select.Option>
+                ))}
+              </Select>
+            </Form.Item>
+          </Col>
+          <Col span={12}>
+            {/* Select de Estado */}
+            <Form.Item
+              label="Estado"
+              name="estado"
+              rules={[{ required: true, message: 'Selecciona un estado' }]}
+              initialValue="ACTIVO"
+            >
+              <Select placeholder="Selecciona un estado">
+                <Select.Option value="ACTIVO">ACTIVO</Select.Option>
+                <Select.Option value="INACTIVO">INACTIVO</Select.Option>
+                <Select.Option value="SUSPENDIDO">SUSPENDIDO</Select.Option>
+              </Select>
             </Form.Item>
           </Col>
         </Row>

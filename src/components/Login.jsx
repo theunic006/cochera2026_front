@@ -10,7 +10,8 @@ const { Title, Text } = Typography;
 
 const Login = () => {
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+    const { login } = useAuth();
+    const [loginError, setLoginError] = useState("");
   const { isDarkMode } = useTheme();
   const navigate = useNavigate();
 
@@ -26,14 +27,16 @@ const Login = () => {
         // Guardar token y datos del usuario
         const { user, access_token } = response.data.data;
         login(user, access_token);
-        
-        message.success(response.data.message || 'Inicio de sesión exitoso');
-        navigate('/dashboard');
+      message.success(response.data.message || 'Inicio de sesión exitoso');
+      setLoginError("");
+      navigate('/dashboard');
       } else {
-        message.error('Error en las credenciales');
+  setLoginError('Usuario inválido');
+  message.error('Usuario inválido');
       }
     } catch (error) {
       console.error('Error al iniciar sesión:', error);
+      setLoginError('Usuario inválido');
       message.error(
         error.response?.data?.message || 
         'Error al iniciar sesión. Verifica tus credenciales.'
@@ -91,6 +94,11 @@ const Login = () => {
 
         <Divider style={{ margin: '24px 0', borderColor: isDarkMode ? '#303030' : '#f0f0f0' }} />
 
+        {loginError && (
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ color: '#ff4d4f', fontWeight: 600, textAlign: 'center' }}>{loginError}</div>
+          </div>
+        )}
         <Form
           name="login"
           onFinish={onFinish}

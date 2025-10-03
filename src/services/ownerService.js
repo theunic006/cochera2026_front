@@ -17,9 +17,6 @@ apiClient.interceptors.request.use(
     const token = localStorage.getItem('access_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
-      console.log('Token enviado:', `Bearer ${token.substring(0, 20)}...`);
-    } else {
-      console.warn('No se encontró token de acceso');
     }
     return config;
   },

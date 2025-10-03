@@ -17,9 +17,6 @@ apiClient.interceptors.request.use(
     const token = localStorage.getItem('access_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
-      console.log('Token enviado para roles:', `Bearer ${token.substring(0, 20)}...`);
-    } else {
-      console.warn('No se encontró token de acceso para roles');
     }
     return config;
   },
@@ -51,9 +48,7 @@ export const roleService = {
    */
   async getRoles(page = 1, perPage = 15) {
     try {
-      console.log('Obteniendo roles - página:', page, 'por página:', perPage);
       const response = await apiClient.get(`/roles?page=${page}&per_page=${perPage}`);
-      console.log('Respuesta de roles:', response.data);
       return response.data;
     } catch (error) {
       console.error('Error al obtener roles:', error);

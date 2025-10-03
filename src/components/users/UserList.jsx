@@ -240,14 +240,25 @@ const UserList = () => {
     },
     {
       title: 'Estado',
-      dataIndex: 'email_verified_at',
-      key: 'status',
-      width: 100,
-      render: (emailVerified) => (
-        <Tag color={emailVerified ? 'green' : 'orange'}>
-          {emailVerified ? 'Verificado' : 'Pendiente'}
-        </Tag>
-      ),
+      dataIndex: 'estado',
+      key: 'estado',
+      width: 120,
+      render: (estado) => {
+        let color = 'red';
+        let label = 'INACTIVO';
+        if (estado === 'ACTIVO') {
+          color = 'green';
+          label = 'ACTIVO';
+        } else if (estado === 'SUSPENDIDO') {
+          color = 'orange';
+          label = 'SUSPENDIDO';
+        }
+        return (
+          <Tag color={color}>
+            {label}
+          </Tag>
+        );
+      },
     },
     {
       title: 'Registrado',

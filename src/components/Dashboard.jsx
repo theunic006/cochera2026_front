@@ -1,55 +1,12 @@
-import { useEffect, useState } from "react";
-import { Typography, Form, Input, List, Card, message, Row, Col, Statistic, Button, Space, Avatar, Progress } from 'antd';
-import { UserOutlined, PlusOutlined, ReloadOutlined, CarOutlined, TeamOutlined, DollarOutlined, ClockCircleOutlined } from '@ant-design/icons';
-import axios from "axios";
+import { Typography, Card, Row, Col, Statistic, Progress, Spin } from 'antd';
+import { CarOutlined, TeamOutlined, ClockCircleOutlined } from '@ant-design/icons';
 import AppLayout from './AppLayout';
 import { useAuthInfo } from '../hooks/useAuthInfo';
 
 const { Title, Text } = Typography;
 
 const Dashboard = () => {
-  const { user, empresa } = useAuthInfo();
-  const [suscribers, setSuscribers] = useState([]);
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
-
-  useEffect(() => {
-    fetchsuscribers();
-  }, []);
-
-  const fetchsuscribers = async () => {
-    setRefreshing(true);
-    try {
-      const response = await axios.get("http://localhost:8000/api/suscribers");
-      setSuscribers(response.data);
-    } catch (error) {
-      message.error('Error al cargar los suscriptores');
-      console.error('Error:', error);
-    } finally {
-      setRefreshing(false);
-    }
-  };
-
-  const handledSubmit = async (values) => {
-    setLoading(true);
-    try {
-      await axios.post("http://localhost:8000/api/suscribers", {
-        name: values.name,
-        email: values.email,
-      });
-      message.success('Suscriptor agregado exitosamente');
-      setName("");
-      setEmail("");
-      fetchsuscribers();
-    } catch (error) {
-      message.error('Error al agregar el suscriptor');
-      console.error('Error:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { userInfo, empresaLoading } = useAuthInfo();
 
   // Datos simulados para las estadísticas
   const stats = {
@@ -58,12 +15,21 @@ const Dashboard = () => {
     ingresosMensuales: 45800,
     tiempoPromedio: 3.2,
   };
-
   const ocupacionPorcentaje = Math.round((stats.espaciosOcupados / stats.totalVehiculos) * 100);
+
+  if (!userInfo) {
+    return (
+      <AppLayout>
+        <div style={{ padding: 32, textAlign: 'center' }}>
+          <Title level={3}>No estás autenticado</Title>
+        </div>
+      </AppLayout>
+    );
+  }
 
   return (
     <AppLayout>
-      <div>
+      <div style={{ padding: 24 }}>
         {/* Header del Dashboard */}
         <div style={{ marginBottom: '24px' }}>
           <Title level={2} style={{ margin: 0 }}>
@@ -79,17 +45,57 @@ const Dashboard = () => {
           <Col xs={24} md={12} lg={8}>
             <Card>
               <Title level={5} style={{ marginBottom: 0 }}>Usuario logueado</Title>
-              <Text strong>{user?.name || user?.nombre || 'Sin usuario'}</Text>
+              <Text strong>{userInfo?.name || userInfo?.nombre || 'Sin usuario'}</Text>
               <br />
-              <Text type="secondary">Email: {user?.email || '---'}</Text>
+              <Text type="secondary">Email: {userInfo?.email || '---'}</Text>
             </Card>
           </Col>
           <Col xs={24} md={12} lg={8}>
             <Card>
               <Title level={5} style={{ marginBottom: 0 }}>Empresa</Title>
-              <Text strong>{empresa?.nombre || empresa?.name || 'Sin empresa'}</Text>
-              <br />
-              <Text type="secondary">RUC: {empresa?.ruc || '---'}</Text>
+              {!userInfo?.id_company ? (
+                <Text strong>Sin empresa</Text>
+              ) : empresaLoading ? (
+                <div style={{ textAlign: 'center', padding: '16px 0' }}>
+                  <Spin size="small" /> <Text type="secondary">Cargando empresa...</Text>
+                </div>
+              ) : userInfo?.empresa?.data ? (
+                <>
+                  {/* Logo de la empresa */}
+                  {userInfo.empresa.data.logo && (
+                    <div style={{ textAlign: 'center', marginBottom: 8 }}>
+                      <img
+                        src={`http://127.0.0.1:8000/storage/${userInfo.empresa.data.logo}`}
+                        alt="Logo empresa"
+                        style={{
+                          width: 64,
+                          height: 64,
+                          objectFit: 'contain',
+                          borderRadius: 8,
+                          background: '#fff',
+                          border: '1px solid #eee',
+                          boxShadow: '0 1px 4px rgba(0,0,0,0.06)'
+                        }}
+                      />
+                    </div>
+                  )}
+                  <Text strong>{userInfo.empresa.data.nombre || 'Sin nombre'}</Text>
+                  <br />
+                  <Text type="secondary">Ubicación: {userInfo.empresa.data.ubicacion || '---'}</Text>
+                  <br />
+                  <Text type="secondary">Descripción: {userInfo.empresa.data.descripcion || '---'}</Text>
+                  <br />
+                  <Text type="secondary">Estado: {userInfo.empresa.data.estado_info?.label || userInfo.empresa.data.estado || '---'}</Text>
+                  <br />
+                  <Text type="secondary">Usuarios: {userInfo.empresa.data.users_count ?? '---'}</Text>
+                  <br />
+                  <Text type="secondary">Creada: {userInfo.empresa.data.created_at ? new Date(userInfo.empresa.data.created_at).toLocaleString() : '---'}</Text>
+                  <br />
+                  <Text type="secondary">Actualizada: {userInfo.empresa.data.updated_at ? new Date(userInfo.empresa.data.updated_at).toLocaleString() : '---'}</Text>
+                </>
+              ) : (
+                <Text strong>Sin empresa</Text>
+              )}
             </Card>
           </Col>
         </Row>
@@ -146,130 +152,39 @@ const Dashboard = () => {
             </Card>
           </Col>
         </Row>
-
-        {/* Sección principal */}
-        <Row gutter={[24, 24]}>
-          <Col xs={24} lg={8}>
-            <Card 
-              title={
-                <Space>
-                  <PlusOutlined />
-                  Agregar Nuevo Suscriptor
-                </Space>
-              }
-              style={{ height: 'fit-content' }}
-            >
-              <Form
-                layout="vertical"
-                onFinish={handledSubmit}
-                initialValues={{ name, email }}
-              >
-                <Form.Item
-                  label="Nombre"
-                  name="name"
-                  rules={[
-                    { required: true, message: 'Por favor ingresa el nombre' }
-                  ]}
-                >
-                  <Input 
-                    placeholder="Nombre del suscriptor"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    size="large"
-                  />
-                </Form.Item>
-
-                <Form.Item
-                  label="Correo electrónico"
-                  name="email"
-                  rules={[
-                    { required: true, message: 'Por favor ingresa el correo' },
-                    { type: 'email', message: 'Ingresa un correo válido' }
-                  ]}
-                >
-                  <Input 
-                    type="email"
-                    placeholder="correo@ejemplo.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    size="large"
-                  />
-                </Form.Item>
-
-                <Form.Item>
-                  <Button 
-                    type="primary" 
-                    htmlType="submit"
-                    loading={loading}
-                    block
-                    size="large"
-                    style={{
-                      borderRadius: '8px',
-                      height: '48px',
-                      fontSize: '16px',
-                      fontWeight: '500',
-                    }}
-                  >
-                    Agregar Suscriptor
-                  </Button>
-                </Form.Item>
-              </Form>
+        {/* Widgets adicionales responsivos */}
+        <Row gutter={[16, 16]}>
+          {/* Widget: Alertas de ocupación */}
+          <Col xs={24} sm={12} md={8} lg={6}>
+            <Card>
+              <Title level={5} style={{ marginBottom: 8 }}>Alertas de ocupación</Title>
+              {ocupacionPorcentaje > 70 ? (
+                <Text type="danger">¡Atención! La ocupación supera el 70% ({ocupacionPorcentaje}%).</Text>
+              ) : (
+                <Text type="success">Ocupación en niveles óptimos ({ocupacionPorcentaje}%).</Text>
+              )}
             </Card>
           </Col>
 
-          <Col xs={24} lg={16}>
-            <Card 
-              title={`📋 Lista de Suscriptores (${suscribers.length})`}
-              extra={
-                <Button 
-                  type="text" 
-                  icon={<ReloadOutlined />}
-                  onClick={fetchsuscribers}
-                  loading={refreshing}
-                >
-                  Actualizar
-                </Button>
-              }
-            >
-              <List
-                dataSource={suscribers}
-                renderItem={(suscriber, index) => (
-                  <List.Item>
-                    <List.Item.Meta
-                      avatar={
-                        <Avatar 
-                          style={{ 
-                            backgroundColor: '#1890ff',
-                            fontSize: '16px'
-                          }}
-                        >
-                          {suscriber.name?.charAt(0)?.toUpperCase() || <UserOutlined />}
-                        </Avatar>
-                      }
-                      title={
-                        <Text strong style={{ fontSize: '16px' }}>
-                          {suscriber.name}
-                        </Text>
-                      }
-                      description={
-                        <Space direction="vertical" size="small">
-                          <Text type="secondary">{suscriber.email}</Text>
-                          <Text type="secondary" style={{ fontSize: '12px' }}>
-                            ID: #{suscriber.id} • Registrado recientemente
-                          </Text>
-                        </Space>
-                      }
-                    />
-                    <div style={{ textAlign: 'right' }}>
-                      <Text type="secondary" style={{ fontSize: '12px' }}>
-                        #{index + 1}
-                      </Text>
-                    </div>
-                  </List.Item>
-                )}
-                locale={{ emptyText: 'No hay suscriptores registrados' }}
-                style={{ maxHeight: '500px', overflowY: 'auto' }}
-              />
+          {/* Widget: Última actividad */}
+          <Col xs={24} sm={12} md={8} lg={6}>
+            <Card>
+              <Title level={5} style={{ marginBottom: 8 }}>Última actividad</Title>
+              <Text>Vehículo placa <b>ABC-123</b> ingresó hace 12 min.</Text>
+              <br />
+              <Text type="secondary">Operador: Juan Pérez</Text>
+            </Card>
+          </Col>
+
+          {/* Widget: Notificaciones */}
+          <Col xs={24} sm={12} md={8} lg={6}>
+            <Card>
+              <Title level={5} style={{ marginBottom: 8 }}>Notificaciones</Title>
+              <ul style={{ paddingLeft: 18, margin: 0 }}>
+                <li>Nuevo usuario registrado</li>
+                <li>Pago recibido por Yape</li>
+                <li>Espacio 15 liberado</li>
+              </ul>
             </Card>
           </Col>
         </Row>

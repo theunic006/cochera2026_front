@@ -17,9 +17,6 @@ apiClient.interceptors.request.use(
     const token = localStorage.getItem('access_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
-      console.log('Token enviado para empresas:', `Bearer ${token.substring(0, 20)}...`);
-    } else {
-      console.warn('No se encontró token de acceso para empresas');
     }
     return config;
   },
@@ -51,11 +48,9 @@ export const companyService = {
    */
   async getCompanies(page = 1, perPage = 15) {
     try {
-      console.log('CompanyService: Obteniendo empresas...');
       const response = await apiClient.get('/companies', {
         params: { page, per_page: perPage }
       });
-      console.log('CompanyService: Respuesta cruda:', response);
       return response.data;
     } catch (error) {
       console.error('Error al obtener empresas:', error);
@@ -87,9 +82,14 @@ export const companyService = {
    * @param {string} companyData.estado - Estado de la empresa: 'activo' o 'suspendido' (opcional, por defecto 'activo')
    * @returns {Promise} Respuesta de la API
    */
+
   async createCompany(companyData) {
     try {
-      const response = await apiClient.post('/companies', companyData);
+      let config = {};
+      if (companyData instanceof FormData) {
+        config = { headers: { ...apiClient.defaults.headers, 'Content-Type': undefined } };
+      }
+      const response = await apiClient.post('/companies', companyData, config);
       return response.data;
     } catch (error) {
       console.error('Error al crear empresa:', error);
@@ -109,7 +109,11 @@ export const companyService = {
    */
   async updateCompany(id, companyData) {
     try {
-      const response = await apiClient.put(`/companies/${id}`, companyData);
+      let config = {};
+      if (companyData instanceof FormData) {
+        config = { headers: { ...apiClient.defaults.headers, 'Content-Type': undefined } };
+      }
+      const response = await apiClient.post(`/companies/${id}?_method=PUT`, companyData, config);
       return response.data;
     } catch (error) {
       console.error('Error al actualizar empresa:', error);

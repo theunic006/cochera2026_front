@@ -110,8 +110,7 @@ const CompanyList = () => {
         ]);
       }
     } catch (error) {
-      console.error('Error al cargar estados:', error);
-      // Usar estados por defecto en caso de error
+
       setAvailableStatuses([
         { value: 'activo', label: 'Activo' },
         { value: 'inactivo', label: 'Inactivo' },
@@ -123,7 +122,7 @@ const CompanyList = () => {
 
   // Función para cargar empresas
   const loadCompanies = async (page = 1, pageSize = 15) => {
-    console.log('CompanyList: Iniciando carga de empresas...');
+
     setLoading(true);
     try {
       let response;
@@ -141,10 +140,8 @@ const CompanyList = () => {
         setIsSearching(false);
       }
 
-      console.log('CompanyList: Respuesta recibida:', response);
       if (response.success) {
         const companiesData = response.data || [];
-        console.log('CompanyList: Datos de empresas:', companiesData);
         setCompanies(companiesData);
         setPagination({
           current: response.current_page || page,
@@ -152,12 +149,10 @@ const CompanyList = () => {
           total: response.total || 0,
         });
       } else {
-        console.warn('CompanyList: Respuesta sin éxito:', response);
         message.error('Error al cargar empresas');
         setCompanies([]);
       }
     } catch (error) {
-      console.error('Error al cargar empresas:', error);
       message.error('Error al cargar empresas: ' + (error.message || 'Error desconocido'));
       setCompanies([]);
       setPagination({
@@ -231,7 +226,6 @@ const CompanyList = () => {
         message.error(response.message || 'Error al eliminar la empresa');
       }
     } catch (error) {
-      console.error('Error al eliminar empresa:', error);
       message.error('Error al eliminar la empresa');
     }
   };
@@ -255,7 +249,7 @@ const CompanyList = () => {
         message.error(response.message || 'Error al cambiar estado');
       }
     } catch (error) {
-      console.error('Error al cambiar estado:', error);
+
       message.error('Error al cambiar estado de la empresa');
     }
   };
@@ -438,20 +432,7 @@ const CompanyList = () => {
                 style={{ color: '#1890ff' }}
               />
             </Tooltip>
-            
-            <Dropdown
-              menu={{ items: statusMenuItems }}
-              trigger={['click']}
-              placement="bottomRight"
-            >
-              <Tooltip title="Cambiar estado">
-                <Button
-                  type="text"
-                  icon={<MoreOutlined />}
-                  style={{ color: '#722ed1' }}
-                />
-              </Tooltip>
-            </Dropdown>
+
 
             <Popconfirm
               title="¿Eliminar empresa?"

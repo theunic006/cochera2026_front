@@ -22,6 +22,7 @@ import {
   DollarOutlined,
 } from '@ant-design/icons';
 import { useAuth } from '../context/AuthContext';
+import { useAuthInfo } from '../hooks/useAuthInfo';
 import { useTheme } from '../context/ThemeContext';
 import { useNavigate, useLocation } from 'react-router-dom';
 
@@ -33,6 +34,7 @@ const AppLayout = ({ children }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const { user, logout } = useAuth();
+  const { userInfo } = useAuthInfo();
   const { isDarkMode, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
@@ -57,7 +59,8 @@ const AppLayout = ({ children }) => {
     }
   };
 
-  // Items del menú lateral
+  // Mostrar solo 'Empresas' si el usuario es SUPERUSUARIO (idrol === 1)
+  // Menú base sin 'Empresas'
   const menuItems = [
     {
       key: '/dashboard',
@@ -88,12 +91,6 @@ const AppLayout = ({ children }) => {
       icon: <DollarOutlined />,
       label: 'Ingresos',
       onClick: () => handleMobileNavigation('/ingresos'),
-    },
-    {
-      key: '/empresas',
-      icon: <BankOutlined />,
-      label: 'Empresas',
-      onClick: () => handleMobileNavigation('/empresas'),
     },
     {
       key: '/tolerancias',
@@ -144,6 +141,15 @@ const AppLayout = ({ children }) => {
       onClick: () => handleMobileNavigation('/configuracion'),
     },
   ];
+  // Solo SUPERUSUARIO (idrol === 1) puede ver 'Empresas'
+  if (userInfo?.idrol === 1) {
+    menuItems.splice(5, 0, {
+      key: '/empresas',
+      icon: <BankOutlined />,
+      label: 'Empresas',
+      onClick: () => handleMobileNavigation('/empresas'),
+    });
+  }
 
   // Items del dropdown del usuario
   const userMenuItems = [
@@ -198,46 +204,80 @@ const AppLayout = ({ children }) => {
   };
 
   // Componente del menú para reutilizar
-  const MenuComponent = () => (
-    <div>
-      {/* Logo/Brand */}
-      <div style={{
-        height: '64px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: collapsed && !isMobile ? 'center' : 'flex-start',
-        padding: collapsed && !isMobile ? '0' : '0 24px',
-        borderBottom: `1px solid ${isDarkMode ? '#303030' : '#f0f0f0'}`,
-      }}>
-        <CarOutlined style={{ 
-          fontSize: '24px', 
-          color: '#1890ff',
-          marginRight: collapsed && !isMobile ? 0 : '12px'
-        }} />
-        {(!collapsed || isMobile) && (
-          <Text strong style={{ 
-            fontSize: '18px',
-            color: isDarkMode ? '#fff' : '#1890ff'
-          }}>
-            Cochera 2025
-          </Text>
-        )}
-      </div>
+  const MenuComponent = () => {
 
-      {/* Menú de navegación */}
-      <Menu
-        theme={isDarkMode ? 'dark' : 'light'}
-        mode="inline"
-        selectedKeys={[location.pathname]}
-        items={menuItems}
-        style={{
-          borderRight: 0,
-          height: isMobile ? 'calc(100vh - 64px)' : 'calc(100vh - 64px)',
-          overflow: 'auto',
-        }}
-      />
-    </div>
-  );
+  const companyLogo = userInfo?.empresa?.data?.logo;
+
+    return (
+      <div>
+        {/* Logo/Brand */}
+        <div style={{
+          height: '64px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: collapsed && !isMobile ? 'center' : 'flex-start',
+          padding: collapsed && !isMobile ? '0' : '0 24px',
+          borderBottom: `1px solid ${isDarkMode ? '#303030' : '#f0f0f0'}`,
+        }}>
+          <CarOutlined style={{ 
+            fontSize: '24px', 
+            color: '#1890ff',
+            marginRight: collapsed && !isMobile ? 0 : '12px'
+          }} />
+          {(!collapsed || isMobile) && (
+            <Text strong style={{ 
+              fontSize: '18px',
+              color: isDarkMode ? '#fff' : '#1890ff'
+            }}>
+              Cochera 2025
+            </Text>
+          )}
+        </div>
+
+        {/* Logo de empresa arriba del menú, solo en desktop */}
+        {companyLogo && !isMobile && (
+          <div
+            style={{
+              width: '100%',
+              textAlign: 'center',
+              margin: '18px 0 8px 0',
+              padding: 0,
+            }}
+          >
+            <img
+              src={`http://127.0.0.1:8000/storage/${userInfo.empresa.data.logo}`}
+              alt="Logo empresa"
+              style={{
+                width: '80%',
+                maxWidth: 120,
+                maxHeight: 60,
+                objectFit: 'contain',
+                borderRadius: 8,
+                background: '#fff',
+                border: '1px solid #eee',
+                boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+                display: 'block',
+                margin: '0 auto',
+              }}
+            />
+          </div>
+        )}
+
+        {/* Menú de navegación */}
+        <Menu
+          theme={isDarkMode ? 'dark' : 'light'}
+          mode="inline"
+          selectedKeys={[location.pathname]}
+          items={menuItems}
+          style={{
+            borderRight: 0,
+            height: isMobile ? 'calc(100vh - 64px)' : 'calc(100vh - 64px)',
+            overflow: 'auto',
+          }}
+        />
+      </div>
+    );
+  };
 
   return (
     <Layout style={{ minHeight: '100vh' }}>

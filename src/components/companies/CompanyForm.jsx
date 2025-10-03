@@ -10,23 +10,19 @@ import {
   Row,
   Col,
   Switch,
-  Select
+  Select,
+  Upload,
+  InputNumber
 } from 'antd';
-import { 
-  BankOutlined, 
-  EnvironmentOutlined,
-  FileTextOutlined,
-  SafetyCertificateOutlined
-} from '@ant-design/icons';
+import { BankOutlined, EnvironmentOutlined, FileTextOutlined, SafetyCertificateOutlined, UploadOutlined, InboxOutlined } from '@ant-design/icons';
 import { companyService } from '../../services/companyService';
-
 const { TextArea } = Input;
-const { Option } = Select;
-
 const CompanyForm = ({ visible, onCancel, onSuccess, editingCompany = null }) => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [logoFile, setLogoFile] = useState(null);
+  const [logoPreview, setLogoPreview] = useState(null);
 
   const isEditing = Boolean(editingCompany);
 
@@ -40,10 +36,26 @@ const CompanyForm = ({ visible, onCancel, onSuccess, editingCompany = null }) =>
           ubicacion: editingCompany.ubicacion || '',
           descripcion: editingCompany.descripcion || '',
           estado: editingCompany.estado || 'activo',
+          capacidad: editingCompany.capacidad || '',
         });
+        // Previsualizar logo existente si hay
+        if (editingCompany.logo) {
+          // Si el logo ya es una URL absoluta, úsala; si es relativa, anteponer la URL base
+          const isAbsolute = editingCompany.logo.startsWith('http');
+          setLogoPreview(
+            isAbsolute
+              ? editingCompany.logo
+              : `http://127.0.0.1:8000/storage/${editingCompany.logo}`
+          );
+        } else {
+          setLogoPreview(null);
+        }
+        setLogoFile(null);
       } else {
         // Limpiar formulario para crear nueva empresa
         form.resetFields();
+        setLogoFile(null);
+        setLogoPreview(null);
         // Valores por defecto para nueva empresa
         form.setFieldsValue({
           estado: 'activo', // Por defecto activo
@@ -54,6 +66,37 @@ const CompanyForm = ({ visible, onCancel, onSuccess, editingCompany = null }) =>
     }
   }, [visible, isEditing, editingCompany, form]);
 
+  // Validar archivo de imagen (solo jpg/png, <2MB)
+  const beforeUpload = (file) => {
+    const isJpgOrPng = file.type === 'image/jpeg' || file.type === 'image/png';
+    if (!isJpgOrPng) {
+      message.error('Solo se permiten imágenes JPG o PNG');
+      return Upload.LIST_IGNORE;
+    }
+    const isLt2M = file.size / 1024 / 1024 < 2;
+    if (!isLt2M) {
+      message.error('La imagen debe ser menor a 2MB');
+      return Upload.LIST_IGNORE;
+    }
+    return true;
+  };
+
+  // Manejar cambio de archivo
+  const handleLogoChange = (info) => {
+    if (info.file.status === 'removed') {
+      setLogoFile(null);
+      setLogoPreview(null);
+      return;
+    }
+    const file = info.file.originFileObj;
+    if (file) {
+      setLogoFile(file);
+      const reader = new FileReader();
+      reader.onload = (e) => setLogoPreview(e.target.result);
+      reader.readAsDataURL(file);
+    }
+  };
+
   // Función para manejar el envío del formulario
   const handleSubmit = async (values) => {
     setLoading(true);
@@ -62,41 +105,42 @@ const CompanyForm = ({ visible, onCancel, onSuccess, editingCompany = null }) =>
     try {
       let response;
 
-      const companyData = {
-        nombre: values.nombre.trim(),
-        ubicacion: values.ubicacion?.trim() || '',
-        descripcion: values.descripcion?.trim() || '',
-        estado: values.estado // Usar directamente el valor del select
-      };
+      // Usar FormData para enviar archivos
+      const formData = new FormData();
+      formData.append('nombre', values.nombre.trim());
+      formData.append('ubicacion', values.ubicacion?.trim() || '');
+      formData.append('descripcion', values.descripcion?.trim() || '');
+      formData.append('estado', values.estado);
+      formData.append('capacidad', values.capacidad);
+      if (logoFile) {
+        formData.append('logo', logoFile);
+      }
 
       if (isEditing) {
-        // Actualizar empresa existente
-        response = await companyService.updateCompany(editingCompany.id, companyData);
+        response = await companyService.updateCompany(editingCompany.id, formData, true);
       } else {
-        // Crear nueva empresa
-        response = await companyService.createCompany(companyData);
+        response = await companyService.createCompany(formData, true);
       }
 
       if (response.success) {
         message.success(
           isEditing 
-            ? `Empresa "${companyData.nombre}" actualizada correctamente`
-            : `Empresa "${companyData.nombre}" creada correctamente`
+            ? `Empresa "${values.nombre}" actualizada correctamente`
+            : `Empresa "${values.nombre}" creada correctamente`
         );
         form.resetFields();
+        setLogoFile(null);
+        setLogoPreview(null);
         onSuccess();
       } else {
         message.error(response.message || 'Error al procesar la empresa');
       }
     } catch (error) {
       console.error('Error al enviar formulario:', error);
-      
       if (error.type === 'validation' && error.errors) {
-        // Errores de validación del servidor
         setErrors(error.errors);
         message.error('Por favor, corrija los errores en el formulario');
       } else {
-        // Otros tipos de errores
         message.error(error.message || 'Error al procesar la empresa');
       }
     } finally {
@@ -185,6 +229,65 @@ const CompanyForm = ({ visible, onCancel, onSuccess, editingCompany = null }) =>
 
         <Row gutter={16}>
           <Col span={24}>
+            {/* Campo Logo */}
+            <Form.Item
+              label="Logo de la empresa (JPG o PNG)"
+              name="logo"
+              valuePropName="fileList"
+              getValueFromEvent={() => logoFile ? [logoFile] : []}
+              extra="Solo imágenes JPG o PNG, máximo 2MB"
+            >
+              <Upload.Dragger
+                name="logo"
+                accept=".jpg,.jpeg,.png"
+                beforeUpload={beforeUpload}
+                showUploadList={false}
+                customRequest={({ file, onSuccess }) => { setTimeout(() => onSuccess('ok'), 0); }}
+                onChange={handleLogoChange}
+                disabled={loading}
+              >
+                {logoPreview ? (
+                  <img src={logoPreview} alt="Logo" style={{ maxWidth: 120, maxHeight: 120, margin: 8, display: 'block', objectFit: 'contain' }} />
+                ) : (
+                  <>
+                    <p className="ant-upload-drag-icon">
+                      <InboxOutlined style={{ color: '#1890ff', fontSize: 32 }} />
+                    </p>
+                    <p>Haz clic o arrastra una imagen aquí</p>
+                  </>
+                )}
+              </Upload.Dragger>
+            </Form.Item>
+          </Col>
+        </Row>
+
+        <Row gutter={16}>
+          <Col span={24}>
+            {/* Campo Capacidad */}
+            <Form.Item
+              label="Capacidad de vehículos en cochera"
+              name="capacidad"
+              rules={[
+                { required: true, message: 'La capacidad es obligatoria' },
+                { type: 'number', min: 1, message: 'Debe ser un número mayor a 0' },
+              ]}
+              validateStatus={errors.capacidad ? 'error' : ''}
+              help={errors.capacidad ? (Array.isArray(errors.capacidad) ? errors.capacidad.join(', ') : errors.capacidad) : ''}
+            >
+              <InputNumber
+                min={1}
+                max={10000}
+                style={{ width: '100%' }}
+                placeholder="Ej: 50"
+                size="large"
+                disabled={loading}
+              />
+            </Form.Item>
+          </Col>
+        </Row>
+
+        <Row gutter={16}>
+          <Col span={24}>
             {/* Campo Ubicación */}
             <Form.Item
               label="Ubicación"
@@ -244,30 +347,30 @@ const CompanyForm = ({ visible, onCancel, onSuccess, editingCompany = null }) =>
                 size="large"
                 style={{ width: '100%' }}
               >
-                <Option value="activo">
+                <Select.Option value="activo">
                   <Space>
                     <SafetyCertificateOutlined style={{ color: '#52c41a' }} />
                     Activo
                   </Space>
-                </Option>
-                <Option value="inactivo">
+                </Select.Option>
+                <Select.Option value="inactivo">
                   <Space>
                     <SafetyCertificateOutlined style={{ color: '#faad14' }} />
                     Inactivo
                   </Space>
-                </Option>
-                <Option value="suspendido">
+                </Select.Option>
+                <Select.Option value="suspendido">
                   <Space>
                     <SafetyCertificateOutlined style={{ color: '#ff4d4f' }} />
                     Suspendido
                   </Space>
-                </Option>
-                <Option value="pendiente">
+                </Select.Option>
+                <Select.Option value="pendiente">
                   <Space>
                     <SafetyCertificateOutlined style={{ color: '#1890ff' }} />
                     Pendiente
                   </Space>
-                </Option>
+                </Select.Option>
               </Select>
             </Form.Item>
           </Col>

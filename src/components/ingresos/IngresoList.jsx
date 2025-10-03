@@ -250,10 +250,12 @@ const IngresoList = () => {
         onPagoEfectivo={() => {
           setTerminarModalVisible(false);
           message.success('Pago registrado: Efectivo');
+          cargarIngresos(pagination.current, pagination.pageSize);
         }}
         onPagoYape={() => {
           setTerminarModalVisible(false);
           message.success('Pago registrado: Yape');
+          cargarIngresos(pagination.current, pagination.pageSize);
         }}
       />
       <div>
