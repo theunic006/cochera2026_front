@@ -140,6 +140,12 @@ const AppLayout = ({ children }) => {
       label: 'Configuración',
       onClick: () => handleMobileNavigation('/configuracion'),
     },
+    {
+      key: '/salidas',
+      icon: <FieldTimeOutlined />,
+      label: 'Salidas',
+      onClick: () => handleMobileNavigation('/salidas'),
+    },
   ];
   // Solo SUPERUSUARIO (idrol === 1) puede ver 'Empresas'
   if (userInfo?.idrol === 1) {
