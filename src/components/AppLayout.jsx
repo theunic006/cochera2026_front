@@ -146,6 +146,12 @@ const AppLayout = ({ children }) => {
       label: 'Salidas',
       onClick: () => handleMobileNavigation('/salidas'),
     },
+    {
+      key: '/observaciones',
+      icon: <FileTextOutlined />,
+      label: 'Observaciones',
+      onClick: () => handleMobileNavigation('/observaciones'),
+    },
   ];
   // Solo SUPERUSUARIO (idrol === 1) puede ver 'Empresas'
   if (userInfo?.idrol === 1) {

@@ -18,6 +18,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import RegistroList from './components/registros/RegistroList';
 import IngresoList from './components/ingresos/IngresoList';
 import SalidasList from './components/salidas/SalidasList';
+import { ObservacionesList } from './components/observaciones';
 import "./App.css";
 
 // Componente para manejar la redirección inicial
@@ -139,6 +140,14 @@ const AppRouter = () => {
         element={
           <ProtectedRoute>
             <SalidasList />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/observaciones" 
+        element={
+          <ProtectedRoute>
+            <ObservacionesList />
           </ProtectedRoute>
         } 
       />
