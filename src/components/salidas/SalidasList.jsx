@@ -157,7 +157,12 @@ const SalidasList = () => {
   // Columnas de la tabla
   const columns = [
     {
-      title: 'Vehículo (Placa)',
+      title: 'Placa-R',
+      dataIndex: 'placa',
+      key: 'placa',
+    },
+    {
+      title: 'Placa-Edit',
       dataIndex: ['registro', 'vehiculo', 'placa'],
       key: 'placa',
       render: (_, record) => record.registro?.vehiculo?.placa || '-',
@@ -194,7 +199,7 @@ const SalidasList = () => {
       title: 'Precio',
       dataIndex: 'precio',
       key: 'precio',
-      render: (precio) => `S/ ${precio}`,
+      render: (precio) => `S/ ${precio}.00`,
     },
     {
       title: 'Tipo Pago',
@@ -203,9 +208,8 @@ const SalidasList = () => {
     },
     {
       title: 'Usuario',
-      dataIndex: ['user', 'name'],
+      dataIndex: 'user',
       key: 'user',
-      render: (_, record) => record.user?.name || '-',
     },
   ];
 

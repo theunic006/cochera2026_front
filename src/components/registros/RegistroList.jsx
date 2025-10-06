@@ -101,11 +101,17 @@ const columns = [
         width: 80,
         render: (id) => <span style={{ fontWeight: 'bold', color: '#722ed1' }}>#{id}</span>,
     },
+        {
+        title: 'Placa-R',
+        dataIndex: 'placa',
+        key: 'placa',
+        render: (placa) => <span style={{color: '#11f72fff' }}><CarOutlined /> {placa}</span>,
+    },
     {
-        title: 'Placa',
+        title: 'Placa-Edit',
         dataIndex: ['vehiculo', 'placa'],
         key: 'placa',
-        render: (_, record) => record.vehiculo?.placa ? <span><CarOutlined /> {record.vehiculo.placa}</span> : <span style={{color: '#aaa'}}>Sin placa</span>,
+        render: (_, record) => record.vehiculo?.placa ? <span style={{color: '#ee2525ff'}}><CarOutlined /> {record.vehiculo.placa}</span> : <span style={{color: '#ee2525ff'}}>Sin placa</span>,
     },
     {
         title: 'Tipo de Vehículo',
@@ -134,30 +140,11 @@ const columns = [
         },
     },
     {
-        title: 'Modelo',
-        dataIndex: ['vehiculo', 'modelo'],
-        key: 'modelo',
-        render: (_, record) => record.vehiculo?.modelo || <span style={{color: '#aaa'}}>Sin modelo</span>,
+        title: 'Usuario',
+        dataIndex: 'user',
+        key: 'user',
+        render: (user) => <span style={{color: '#2d99b9ff' }}><UserOutlined /> {user}</span>,
     },
-    {
-        title: 'Marca',
-        dataIndex: ['vehiculo', 'marca'],
-        key: 'marca',
-        render: (_, record) => record.vehiculo?.marca || <span style={{color: '#aaa'}}>Sin marca</span>,
-    },
-    {
-        title: 'Color',
-        dataIndex: ['vehiculo', 'color'],
-        key: 'color',
-        render: (_, record) => record.vehiculo?.color || <span style={{color: '#aaa'}}>Sin color</span>,
-    },
-    {
-        title: 'Año',
-        dataIndex: ['vehiculo', 'anio'],
-        key: 'anio',
-        render: (_, record) => record.vehiculo?.anio || <span style={{color: '#aaa'}}>Sin año</span>,
-    },
-
     {
         title: 'Fecha',
         dataIndex: 'fecha',

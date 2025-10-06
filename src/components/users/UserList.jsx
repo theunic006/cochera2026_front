@@ -261,6 +261,17 @@ const UserList = () => {
       },
     },
     {
+      title: 'Rol',
+      dataIndex: ['role', 'descripcion'],
+      key: 'role',
+      width: 120,
+      render: (_, record) => (
+        <Tag color="purple">
+          {record.role?.descripcion || 'Sin rol'}
+        </Tag>
+      ),
+    },
+    {
       title: 'Registrado',
       dataIndex: 'created_at',
       key: 'created_at',
