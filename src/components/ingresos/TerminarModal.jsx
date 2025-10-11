@@ -1,47 +1,46 @@
-
+import { toleranceService } from '../../services/toleranceService';
+import { useAuth } from '../../context/AuthContext';
+import { calcularTiempoEstadiaConTolerancia, getTiempoEstadia } from '../../utils/CalValores';
 import React from "react";
 import { Modal, Button, Descriptions } from "antd";
 import { CarOutlined, ClockCircleOutlined, TagOutlined, CreditCardOutlined } from "@ant-design/icons";
 import { ingresoService } from '../../services/ingresoService';
 
+
 const TerminarModal = ({ visible, onCancel, ingreso, onPagoEfectivo, onPagoYape }) => {
+  const { user } = useAuth();
+  const [toleranciaMinutos, setToleranciaMinutos] = React.useState(null);
+  React.useEffect(() => {
+    const fetchTolerancia = async () => {
+      if (user && user.id_company) {
+        try {
+          const tolerancia = await toleranceService.getToleranceByEmpresa(user.id_company);
+          let minutosTolerancia = null;
+          if (tolerancia && tolerancia.data && Array.isArray(tolerancia.data) && tolerancia.data[0]) {
+            minutosTolerancia = tolerancia.data[0].minutos;
+          }
+          setToleranciaMinutos(minutosTolerancia);
+        } catch (err) {
+          setToleranciaMinutos(null);
+        }
+      }
+    };
+    fetchTolerancia();
+  }, [user]);
+
   if (!ingreso) return null;
   const vehiculo = ingreso.vehiculo || {};
   const tipoVehiculo = vehiculo.tipo_vehiculo || {};
-  const getTiempoEstadia = () => {
-    if (!ingreso.fecha_ingreso || !ingreso.hora_ingreso) return "00:00:00";
-    const ingresoDate = new Date(`${ingreso.fecha_ingreso}T${ingreso.hora_ingreso}`);
-    const ahora = new Date();
-    const diffMs = ahora - ingresoDate;
-    if (isNaN(diffMs)) return "00:00:00";
-    const horas = Math.floor(diffMs / (1000 * 60 * 60));
-    const minutos = Math.floor((diffMs / (1000 * 60)) % 60);
-    const segundos = Math.floor((diffMs / 1000) % 60);
-    return `${String(horas).padStart(2, '0')}:${String(minutos).padStart(2, '0')}:${String(segundos).padStart(2, '0')}`;
-  };
-  const tiempo = (() => {
-    if (!ingreso.fecha_ingreso || !ingreso.hora_ingreso) return "-";
-    const ingresoDate = new Date(`${ingreso.fecha_ingreso}T${ingreso.hora_ingreso}`);
-    const ahora = new Date();
-    const diffMs = ahora - ingresoDate;
-    if (isNaN(diffMs)) return "-";
-    const horas = Math.floor(diffMs / (1000 * 60 * 60));
-    const minutos = Math.floor((diffMs / (1000 * 60)) % 60);
-    return `${horas}h ${minutos}m`;
-  })();
+  const tiempoObj = calcularTiempoEstadiaConTolerancia(ingreso.fecha_ingreso, ingreso.hora_ingreso, toleranciaMinutos);
+  const tiempo = tiempoObj.texto;
   const precioHora = tipoVehiculo.valor || 0;
-  const fracciones = (() => {
-    if (!ingreso.fecha_ingreso || !ingreso.hora_ingreso) return 1;
-    const ingresoDate = new Date(`${ingreso.fecha_ingreso}T${ingreso.hora_ingreso}`);
-    const ahora = new Date();
-    const diffMs = ahora - ingresoDate;
-    return Math.ceil(diffMs / (1000 * 60 * 60)) || 1;
-  })();
-  const total = precioHora * fracciones;
+  const fracciones = tiempoObj.fracciones;
+  const total = precioHora * (fracciones > 0 ? fracciones : 1);
   const horaSalida = new Date().toLocaleTimeString("es-PE", { hour12: false });
 
+
   const handlePago = async (tipo_pago) => {
-    const tiempoEstadia = getTiempoEstadia();
+    const tiempoEstadia = getTiempoEstadia(ingreso);
     const precio = total;
     try {
       const res = await ingresoService.deleteIngreso(ingreso.id, {

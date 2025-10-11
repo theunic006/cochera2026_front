@@ -1,38 +1,5 @@
-import axios from 'axios';
-
-const API_BASE_URL = 'http://localhost:8000/api';
-
-const apiClient = axios.create({
-  baseURL: API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
-
-apiClient.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('access_token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
-
-apiClient.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('user');
-      window.location.href = '/login';
-    }
-    return Promise.reject(error);
-  }
-);
+import apiClient from '../utils/apiClient';
+import { handleApiError, normalizePaginationResponse } from '../utils/apiHelpers';
 
 export const vehicleTypeService = {
   async getVehicleTypes(page = 1, perPage = 15) {
@@ -40,102 +7,45 @@ export const vehicleTypeService = {
       const response = await apiClient.get('/tipo-vehiculos', {
         params: { page, per_page: perPage }
       });
-      
-      return {
-        success: true,
-        data: response.data.data || response.data,
-        pagination: response.data.pagination || {
-          current_page: page,
-          per_page: perPage,
-          total: response.data.total || 0
-        },
-        message: 'Tipos de vehículos obtenidos exitosamente'
-      };
+      return normalizePaginationResponse(response, page, perPage);
     } catch (error) {
-      console.error('Error al obtener tipos de vehículos:', error);
-      return {
-        success: false,
-        data: [],
-        pagination: {
-          current_page: 1,
-          per_page: perPage,
-          total: 0
-        },
-        message: error.response?.data?.message || 'Error al obtener los tipos de vehículos'
-      };
+      return handleApiError(error);
     }
   },
 
   async createVehicleType(vehicleTypeData) {
     try {
       const response = await apiClient.post('/tipo-vehiculos', vehicleTypeData);
-      
-      return {
-        success: true,
-        data: response.data.data || response.data,
-        message: response.data.message || 'Tipo de vehículo creado exitosamente'
-      };
+      return { success: true, data: response.data };
     } catch (error) {
-      console.error('Error al crear tipo de vehículo:', error);
-      return {
-        success: false,
-        message: error.response?.data?.message || 'Error al crear el tipo de vehículo',
-        errors: error.response?.data?.errors || {}
-      };
+      return handleApiError(error);
     }
   },
 
   async getVehicleTypeById(id) {
     try {
       const response = await apiClient.get(`/tipo-vehiculos/${id}`);
-      
-      return {
-        success: true,
-        data: response.data.data || response.data,
-        message: 'Tipo de vehículo obtenido exitosamente'
-      };
+      return { success: true, data: response.data };
     } catch (error) {
-      console.error('Error al obtener tipo de vehículo:', error);
-      return {
-        success: false,
-        message: error.response?.data?.message || 'Error al obtener el tipo de vehículo'
-      };
+      return handleApiError(error);
     }
   },
 
   async updateVehicleType(id, vehicleTypeData) {
     try {
       const response = await apiClient.put(`/tipo-vehiculos/${id}`, vehicleTypeData);
-      
-      return {
-        success: true,
-        data: response.data.data || response.data,
-        message: response.data.message || 'Tipo de vehículo actualizado exitosamente'
-      };
+      return { success: true, data: response.data };
     } catch (error) {
-      console.error('Error al actualizar tipo de vehículo:', error);
-      return {
-        success: false,
-        message: error.response?.data?.message || 'Error al actualizar el tipo de vehículo',
-        errors: error.response?.data?.errors || {}
-      };
+      return handleApiError(error);
     }
   },
 
   async deleteVehicleType(id) {
     try {
       const response = await apiClient.delete(`/tipo-vehiculos/${id}`);
-      
-      return {
-        success: true,
-        message: response.data.message || 'Tipo de vehículo eliminado exitosamente'
-      };
+      return { success: true, data: response.data };
     } catch (error) {
-      console.error('Error al eliminar tipo de vehículo:', error);
-      return {
-        success: false,
-        message: error.response?.data?.message || 'Error al eliminar el tipo de vehículo'
-      };
+      return handleApiError(error);
     }
   },
 
@@ -144,19 +54,10 @@ export const vehicleTypeService = {
       const response = await apiClient.get('/tipo-vehiculos', {
         params: { per_page: 1000 }
       });
-      
-      return {
-        success: true,
-        data: response.data.data || response.data,
-        message: 'Tipos de vehículos obtenidos exitosamente'
-      };
+      const items = response?.data?.data ?? [];
+      return { success: true, data: items };
     } catch (error) {
-      console.error('Error al obtener todos los tipos de vehículos:', error);
-      return {
-        success: false,
-        data: [],
-        message: error.response?.data?.message || 'Error al obtener los tipos de vehículos'
-      };
+      return handleApiError(error);
     }
   }
 };

@@ -1,4 +1,5 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
+import { printTicketQZ } from "../../utils/printTicket";
 import { Modal, Form, Input, Button, Space, Select, message } from "antd";
 import "./EditarForm.css";
 import { CarOutlined } from "@ant-design/icons";
@@ -13,6 +14,7 @@ const EditarForm = ({
   tiposVehiculo,
 }) => {
   const [form] = Form.useForm();
+  const ticketRef = useRef(null);
 
   useEffect(() => {
     if (visible && ingresoEdit) {
@@ -29,9 +31,23 @@ const EditarForm = ({
     }
   }, [visible, ingresoEdit, form]);
 
+
   // Al hacer click en una observación, poner su descripción en el textarea
   const handleObsClick = (descripcion) => {
     form.setFieldsValue({ observaciones: descripcion });
+  };
+
+  // Imprimir ticket usando QZ Tray (función separada)
+  const handlePrintTicket = async () => {
+    const placa = ingresoEdit?.vehiculo?.placa || "";
+    const fecha = ingresoEdit?.fecha_ingreso || "";
+    const hora = ingresoEdit?.hora_ingreso || "";
+    let tipoVehiculo = "";
+    if (Array.isArray(tiposVehiculo) && ingresoEdit?.vehiculo?.tipo_vehiculo_id) {
+      const tv = tiposVehiculo.find(tv => tv.id === ingresoEdit.vehiculo.tipo_vehiculo_id);
+      tipoVehiculo = tv ? tv.nombre : "";
+    }
+    await printTicketQZ({ placa, fecha, hora, tipoVehiculo });
   };
 
   const handleFinish = async (values) => {
@@ -88,7 +104,7 @@ const EditarForm = ({
           <Button
             color="danger"
             variant="solid"
-            onClick={() => window.print()}
+            onClick={handlePrintTicket}
             icon={<CarOutlined />}
             type="default"
           >
@@ -101,6 +117,8 @@ const EditarForm = ({
             </span>
           )}
         </div>
+
+        {/* Ticket oculto eliminado, ahora se imprime directo con QZ Tray */}
         <div className="form-row-group">
           <label className="form-label">Placa:</label>
           <Form.Item

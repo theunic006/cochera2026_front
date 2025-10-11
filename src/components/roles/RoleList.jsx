@@ -1,28 +1,21 @@
 import { useState, useEffect } from 'react';
 import { 
   Card, 
-  Table, 
   Button, 
   Space, 
   Tag, 
   Avatar, 
-  Input, 
   Row, 
   Col, 
   Statistic, 
-  Typography, 
   message,
-  Modal,
   Tooltip,
   Popconfirm
 } from 'antd';
 import { 
-  UserOutlined, 
-  SearchOutlined, 
   PlusOutlined, 
   EditOutlined, 
   DeleteOutlined, 
-  TeamOutlined,
   ReloadOutlined,
   ExclamationCircleOutlined,
   SecurityScanOutlined,
@@ -31,9 +24,7 @@ import {
 import { roleService } from '../../services/roleService';
 import RoleForm from './RoleForm';
 import AppLayout from '../AppLayout';
-
-const { Title, Text } = Typography;
-const { Search } = Input;
+import TableBase from '../common/TableBase';
 
 const RoleList = () => {
   // Estados principales
@@ -47,10 +38,6 @@ const RoleList = () => {
     showQuickJumper: true,
     pageSizeOptions: ['10', '15', '20', '50', '100'],
   });
-  
-  // Estados para búsqueda y filtros
-  const [searchText, setSearchText] = useState('');
-  const [isSearching, setIsSearching] = useState(false);
   
   // Estados para modales
   const [roleFormVisible, setRoleFormVisible] = useState(false);
@@ -102,54 +89,26 @@ const RoleList = () => {
   };
 
 
-  const handleSearch = async (value, page = 1, pageSize = pagination.pageSize) => {
-    setSearchText(value);
-    
-    if (!value.trim()) {
-      // Si no hay texto, cargar todos los roles
-      loadRoles(page, pageSize);
-      setIsSearching(false);
-      return;
-    }
-
-    setIsSearching(true);
-    setLoading(true);
-    
-    try {
-      const response = await roleService.searchRoles(value.trim(), page, pageSize);
-      
-      if (response.success) {
-        setRoles(response.data);
-        setPagination({
-          current: response.pagination?.current_page || 1,
-          pageSize: response.pagination?.per_page || pageSize,
-          total: response.pagination?.total || response.data.length,
-        });
-      } else {
-        message.error('Error en la búsqueda');
-      }
-    } catch (error) {
-      message.error(error.message || 'Error en la búsqueda');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   /**
    * Manejar cambio de página y tamaño de página
    */
   const handleTableChange = (newPagination) => {
+    loadRoles(newPagination.current, newPagination.pageSize);
+  };
 
+  // Función de filtrado personalizado para múltiples campos
+  const customSearchFilter = (item, searchText) => {
+    const searchLower = searchText.toLowerCase();
     
-    // No actualizar el estado aquí - dejamos que loadRoles lo haga
+    // Buscar en descripción
+    const descripcion = item.descripcion || '';
+    if (descripcion.toLowerCase().includes(searchLower)) return true;
     
-    if (isSearching && searchText) {
-      // Si estamos buscando, usar el endpoint de búsqueda
-      handleSearch(searchText, newPagination.current, newPagination.pageSize);
-    } else {
-      // Cargar roles normalmente
-      loadRoles(newPagination.current, newPagination.pageSize);
-    }
+    // Buscar en estado
+    const estado = item.estado || '';
+    if (estado.toLowerCase().includes(searchLower)) return true;
+    
+    return false;
   };
 
   /**
@@ -178,11 +137,7 @@ const RoleList = () => {
       if (response.success) {
         message.success(`Rol ${roleName} eliminado exitosamente`);
         // Recargar la lista
-        if (isSearching && searchText) {
-          handleSearch(searchText);
-        } else {
-          loadRoles(pagination.current, pagination.pageSize);
-        }
+        loadRoles(pagination.current, pagination.pageSize);
       } else {
         message.error('Error al eliminar rol');
       }
@@ -199,11 +154,7 @@ const RoleList = () => {
     setEditingRole(null);
     
     // Recargar la lista
-    if (isSearching && searchText) {
-      handleSearch(searchText);
-    } else {
-      loadRoles(pagination.current, pagination.pageSize);
-    }
+    loadRoles(pagination.current, pagination.pageSize);
   };
 
   // Configuración de columnas de la tabla
@@ -374,59 +325,43 @@ const RoleList = () => {
           </Col>
         </Row>
 
-        {/* Tabla principal */}
-        <Card
+        {/* Tabla principal con TableBase */}
+        <TableBase
+          dataSource={roles}
+          columns={columns}
+          loading={loading}
+          pagination={{
+            current: pagination.current,
+            pageSize: pagination.pageSize,
+            total: pagination.total,
+            showSizeChanger: true,
+            showQuickJumper: !isMobile,
+            pageSizeOptions: ['10', '15', '20', '50', '100'],
+            showTotal: (total, range) => `${range[0]}-${range[1]} de ${total} roles`,
+            size: 'default',
+          }}
+          onTableChange={handleTableChange}
+          customSearchFilter={customSearchFilter}
+          searchPlaceholder="Buscar roles..."
           title="Lista de Roles"
-          extra={
-            <Space>
-              <Search
-                placeholder="Buscar roles..."
-                allowClear
-                onSearch={handleSearch}
-                onChange={(e) => {
-                  if (!e.target.value) {
-                    handleSearch('');
-                  }
-                }}
-                style={{ width: isMobile ? 150 : 200 }}
-                loading={loading && isSearching}
-              />
-              <Button 
-                type="primary" 
-                icon={<PlusOutlined />}
-                onClick={handleCreateRole}
-                style={{ 
-                  minWidth: isMobile ? 'auto' : 'auto',
-                  padding: isMobile ? '4px 8px' : undefined,
-                  backgroundColor: '#722ed1',
-                  borderColor: '#722ed1'
-                }}
-              >
-                {!isMobile && 'Nuevo Rol'}
-              </Button>
-            </Space>
+          onReload={loadRoles}
+          extraActions={
+            <Button 
+              type="primary" 
+              icon={<PlusOutlined />}
+              onClick={handleCreateRole}
+              style={{ 
+                minWidth: isMobile ? 'auto' : 'auto',
+                padding: isMobile ? '4px 8px' : undefined,
+                backgroundColor: '#722ed1',
+                borderColor: '#722ed1'
+              }}
+            >
+              {!isMobile && 'Nuevo Rol'}
+            </Button>
           }
-        >
-          <Table
-            columns={columns}
-            dataSource={roles}
-            loading={loading}
-            pagination={{
-              current: pagination.current,
-              pageSize: pagination.pageSize,
-              total: pagination.total,
-              showSizeChanger: true,
-              showQuickJumper: !isMobile,
-              pageSizeOptions: ['10', '15', '20', '50', '100'],
-              showTotal: (total, range) => 
-                `${range[0]}-${range[1]} de ${total} roles`,
-              size: 'default',
-            }}
-            onChange={handleTableChange}
-            rowKey="id"
-            scroll={{ x: isMobile ? 800 : undefined }}
-          />
-        </Card>
+          scroll={{ x: isMobile ? 800 : undefined }}
+        />
 
         {/* Modal de formulario */}
         <RoleForm

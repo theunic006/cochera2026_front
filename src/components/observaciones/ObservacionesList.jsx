@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Table, Card, Typography, Row, Col, Statistic, Spin, Alert, Input } from 'antd';
+import { Card, Typography, Row, Col, Statistic, Spin, Alert } from 'antd';
 import { EyeOutlined, FileTextOutlined, ReloadOutlined } from '@ant-design/icons';
 import observacionService from '../../services/observacionService';
 import AppLayout from '../AppLayout';
+import TableBase from '../common/TableBase';
 
 const { Title } = Typography;
 
@@ -10,16 +11,10 @@ const ObservacionesList = () => {
   const [observaciones, setObservaciones] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [searchText, setSearchText] = useState('');
-  const [filteredObservaciones, setFilteredObservaciones] = useState([]);
 
   useEffect(() => {
     loadObservaciones();
   }, []);
-
-  useEffect(() => {
-    handleSearch(searchText);
-  }, [observaciones]);
 
   const loadObservaciones = async () => {
     setLoading(true);
@@ -28,7 +23,6 @@ const ObservacionesList = () => {
       const response = await observacionService.getObservaciones();
       if (response.success) {
         setObservaciones(response.data);
-        setFilteredObservaciones(response.data);
       } else {
         setError('Error al cargar observaciones');
       }
@@ -39,19 +33,27 @@ const ObservacionesList = () => {
     }
   };
 
-  const handleSearch = (value) => {
-    setSearchText(value);
-    if (!value) {
-      setFilteredObservaciones(observaciones);
-    } else {
-      const lowerValue = value.toLowerCase();
-      const filtered = observaciones.filter(obs =>
-        obs.tipo?.toLowerCase().includes(lowerValue) ||
-        obs.descripcion?.toLowerCase().includes(lowerValue) ||
-        obs.vehiculo?.placa?.toLowerCase().includes(lowerValue)
-      );
-      setFilteredObservaciones(filtered);
-    }
+  // Función de filtrado personalizado para múltiples campos
+  const customSearchFilter = (item, searchText) => {
+    const searchLower = searchText.toLowerCase();
+    
+    // Buscar en tipo
+    const tipo = item.tipo || '';
+    if (tipo.toLowerCase().includes(searchLower)) return true;
+    
+    // Buscar en descripción
+    const descripcion = item.descripcion || '';
+    if (descripcion.toLowerCase().includes(searchLower)) return true;
+    
+    // Buscar en placa del vehículo
+    const placa = item.vehiculo?.placa || '';
+    if (placa.toLowerCase().includes(searchLower)) return true;
+    
+    // Buscar en usuario
+    const usuario = item.usuario?.name || '';
+    if (usuario.toLowerCase().includes(searchLower)) return true;
+    
+    return false;
   };
 
   const columns = [
@@ -116,7 +118,7 @@ const ObservacionesList = () => {
             <Card>
               <Statistic
                 title="Total Observaciones"
-                value={filteredObservaciones.length}
+                value={observaciones.length}
                 prefix={<FileTextOutlined />}
                 valueStyle={{ color: '#722ed1' }}
               />
@@ -133,33 +135,22 @@ const ObservacionesList = () => {
             </Card>
           </Col>
         </Row>
-        <Card
-          title="Lista de Observaciones"
-          extra={
-            <Input.Search
-              placeholder="Buscar por tipo, descripción o placa..."
-              allowClear
-              value={searchText}
-              onChange={e => handleSearch(e.target.value)}
-              onSearch={handleSearch}
-              style={{ width: 260 }}
-            />
-          }
-        >
-          {loading ? (
-            <Spin tip="Cargando observaciones..." style={{ width: '100%' }} />
-          ) : error ? (
-            <Alert type="error" message={error} />
-          ) : (
-            <Table
-              columns={columns}
-              dataSource={filteredObservaciones}
-              rowKey="id"
-              pagination={{ pageSize: 15 }}
-              scroll={{ x: true }}
-            />
-          )}
-        </Card>
+
+        {error ? (
+          <Alert type="error" message={error} />
+        ) : (
+          <TableBase
+            dataSource={observaciones}
+            columns={columns}
+            loading={loading}
+            customSearchFilter={customSearchFilter}
+            searchPlaceholder="Buscar por tipo, descripción, placa o usuario..."
+            title="Lista de Observaciones"
+            onReload={loadObservaciones}
+            pagination={{ pageSize: 15 }}
+            scroll={{ x: true }}
+          />
+        )}
       </div>
     </AppLayout>
   );

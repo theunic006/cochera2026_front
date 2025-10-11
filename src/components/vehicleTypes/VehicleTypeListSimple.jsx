@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Card, 
-  Table, 
   Button, 
   Space, 
   Typography, 
@@ -25,6 +24,7 @@ import {
 import { vehicleTypeService } from '../../services/vehicleTypeService';
 import AppLayout from '../AppLayout';
 import VehicleTypeFormSimple from './VehicleTypeFormSimple';
+import TableBase from '../common/TableBase';
 
 const { Title } = Typography;
 
@@ -66,7 +66,6 @@ const VehicleTypeListSimple = () => {
         message.error('Error al cargar tipos de vehículo');
       }
     } catch (error) {
-      console.error('Error al cargar tipos de vehículo:', error);
       message.error('Error al cargar tipos de vehículo');
     } finally {
       setLoading(false);
@@ -94,7 +93,6 @@ const VehicleTypeListSimple = () => {
         message.error(response.message || 'Error al eliminar tipo de vehículo');
       }
     } catch (error) {
-      console.error('Error al eliminar tipo de vehículo:', error);
       message.error('Error al eliminar el tipo de vehículo');
     }
   };
@@ -107,6 +105,21 @@ const VehicleTypeListSimple = () => {
 
   const handleTableChange = (newPagination) => {
     loadVehicleTypes(newPagination.current, newPagination.pageSize);
+  };
+
+  // Función de filtrado personalizado para múltiples campos
+  const customSearchFilter = (item, searchText) => {
+    const searchLower = searchText.toLowerCase();
+    
+    // Buscar en nombre
+    const nombre = item.nombre || '';
+    if (nombre.toLowerCase().includes(searchLower)) return true;
+    
+    // Buscar en valor
+    const valor = item.valor?.toString() || '';
+    if (valor.includes(searchLower)) return true;
+    
+    return false;
   };
 
   const columns = [
@@ -263,49 +276,38 @@ const VehicleTypeListSimple = () => {
           </Col>
         </Row>
 
-        <Card
+        <TableBase
+          dataSource={vehicleTypes}
+          columns={columns}
+          loading={loading}
+          pagination={{
+            current: pagination.current,
+            pageSize: pagination.pageSize,
+            total: pagination.total,
+            showSizeChanger: true,
+            showQuickJumper: true,
+            showTotal: (total, range) => `${range[0]}-${range[1]} de ${total} tipos de vehículo`,
+            pageSizeOptions: ['10', '20', '50', '100'],
+          }}
+          onTableChange={handleTableChange}
+          customSearchFilter={customSearchFilter}
+          searchPlaceholder="Buscar por nombre o valor..."
           title="Lista de Tipos de Vehículo"
-          extra={
-            <Space size="middle">
-              <Button 
-                icon={<ReloadOutlined />}
-                onClick={loadVehicleTypes}
-                loading={loading}
-              >
-                Recargar
-              </Button>
-              <Button 
-                type="primary" 
-                icon={<PlusOutlined />}
-                onClick={handleCreate}
-                style={{ 
-                  backgroundColor: '#722ed1',
-                  borderColor: '#722ed1'
-                }}
-              >
-                Nuevo Tipo
-              </Button>
-            </Space>
+          onReload={loadVehicleTypes}
+          extraActions={
+            <Button 
+              type="primary" 
+              icon={<PlusOutlined />}
+              onClick={handleCreate}
+              style={{ 
+                backgroundColor: '#722ed1',
+                borderColor: '#722ed1'
+              }}
+            >
+              Nuevo Tipo
+            </Button>
           }
-        >
-          <Table
-            columns={columns}
-            dataSource={vehicleTypes}
-            loading={loading}
-            rowKey="id"
-            pagination={{
-              current: pagination.current,
-              pageSize: pagination.pageSize,
-              total: pagination.total,
-              showSizeChanger: true,
-              showQuickJumper: true,
-              showTotal: (total, range) =>
-                `${range[0]}-${range[1]} de ${total} tipos de vehículo`,
-              pageSizeOptions: ['10', '20', '50', '100'],
-            }}
-            onChange={handleTableChange}
-          />
-        </Card>
+        />
 
         {/* Modal del formulario */}
         <VehicleTypeFormSimple

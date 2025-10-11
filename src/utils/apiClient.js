@@ -1,17 +1,17 @@
 import axios from 'axios';
 
-// Configurar la URL base
-const axiosInstance = axios.create({
-  baseURL: 'http://localhost:8000/api',
-  timeout: 10000,
+const API_BASE_URL = 'http://127.0.0.1:8000/api';
+
+const apiClient = axios.create({
+  baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
-  }
+    'X-Requested-With': 'XMLHttpRequest'
+  },
 });
 
-// Configurar interceptor para incluir token en las peticiones
-axiosInstance.interceptors.request.use(
+apiClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('access_token');
     if (token) {
@@ -19,19 +19,13 @@ axiosInstance.interceptors.request.use(
     }
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
-// Interceptor para manejar respuestas de error (como token expirado)
-axiosInstance.interceptors.response.use(
-  (response) => {
-    return response;
-  },
+apiClient.interceptors.response.use(
+  (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Token expirado o inválido
       localStorage.removeItem('access_token');
       localStorage.removeItem('user');
       window.location.href = '/login';
@@ -40,4 +34,4 @@ axiosInstance.interceptors.response.use(
   }
 );
 
-export default axiosInstance;
+export default apiClient;

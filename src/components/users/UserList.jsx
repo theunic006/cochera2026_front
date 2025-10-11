@@ -1,24 +1,19 @@
 import { useState, useEffect } from 'react';
 import { 
   Card, 
-  Table, 
   Button, 
   Space, 
   Tag, 
   Avatar, 
-  Input, 
   Row, 
   Col, 
   Statistic, 
-  Typography, 
   message,
-  Modal,
   Tooltip,
   Popconfirm
 } from 'antd';
 import { 
   UserOutlined, 
-  SearchOutlined, 
   PlusOutlined, 
   EditOutlined, 
   DeleteOutlined, 
@@ -30,9 +25,7 @@ import { userService } from '../../services/userService';
 import { vehiculoService } from '../../services/vehiculoService';
 import UserForm from './UserForm';
 import AppLayout from '../AppLayout';
-
-const { Title, Text } = Typography;
-const { Search } = Input;
+import TableBase from '../common/TableBase';
 
 const UserList = () => {
   // Estados principales
@@ -46,10 +39,6 @@ const UserList = () => {
     showQuickJumper: true,
     pageSizeOptions: ['10', '15', '20', '30', '50', '100'],
   });
-  
-  // Estados para búsqueda y filtros
-  const [searchText, setSearchText] = useState('');
-  const [isSearching, setIsSearching] = useState(false);
   
   // Estados para modales
   const [userFormVisible, setUserFormVisible] = useState(false);
@@ -91,8 +80,6 @@ const UserList = () => {
           total: response.pagination.total,
         };
         
-
-        
         // Actualizar ambos estados juntos
         setPagination(newPagination);
         setUsers(response.data);
@@ -107,55 +94,29 @@ const UserList = () => {
   };
 
   /**
-   * Buscar usuarios
-   */
-  const handleSearch = async (value, page = 1, pageSize = pagination.pageSize) => {
-    setSearchText(value);
-    
-    if (!value.trim()) {
-      // Si no hay texto, cargar todos los usuarios
-      loadUsers(page, pageSize);
-      setIsSearching(false);
-      return;
-    }
-
-    setIsSearching(true);
-    setLoading(true);
-    
-    try {
-      const response = await userService.searchUsers(value.trim(), page, pageSize);
-      
-      if (response.success) {
-        setUsers(response.data);
-        setPagination({
-          current: response.pagination.current_page,
-          pageSize: response.pagination.per_page,
-          total: response.pagination.total,
-        });
-      } else {
-        message.error('Error en la búsqueda');
-      }
-    } catch (error) {
-      message.error(error.message || 'Error en la búsqueda');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  /**
    * Manejar cambio de página y tamaño de página
    */
   const handleTableChange = (newPagination) => {
+    loadUsers(newPagination.current, newPagination.pageSize);
+  };
 
+  // Función de filtrado personalizado para múltiples campos
+  const customSearchFilter = (item, searchText) => {
+    const searchLower = searchText.toLowerCase();
     
-    // No actualizar el estado aquí - dejamos que loadUsers lo haga
-    if (isSearching && searchText) {
-      // Si estamos buscando, usar el endpoint de búsqueda
-      handleSearch(searchText, newPagination.current, newPagination.pageSize);
-    } else {
-      // Cargar usuarios normalmente
-      loadUsers(newPagination.current, newPagination.pageSize);
-    }
+    // Buscar en nombre
+    const name = item.name || '';
+    if (name.toLowerCase().includes(searchLower)) return true;
+    
+    // Buscar en email
+    const email = item.email || '';
+    if (email.toLowerCase().includes(searchLower)) return true;
+    
+    // Buscar en rol
+    const role = item.role?.descripcion || '';
+    if (role.toLowerCase().includes(searchLower)) return true;
+    
+    return false;
   };
 
   /**
@@ -184,11 +145,7 @@ const UserList = () => {
       if (response.success) {
         message.success(`Usuario ${userName} eliminado exitosamente`);
         // Recargar la lista
-        if (isSearching && searchText) {
-          handleSearch(searchText);
-        } else {
-          loadUsers(pagination.current, pagination.pageSize);
-        }
+        loadUsers(pagination.current, pagination.pageSize);
       } else {
         message.error('Error al eliminar usuario');
       }
@@ -205,11 +162,7 @@ const UserList = () => {
     setEditingUser(null);
     
     // Recargar la lista
-    if (isSearching && searchText) {
-      handleSearch(searchText);
-    } else {
-      loadUsers(pagination.current, pagination.pageSize);
-    }
+    loadUsers(pagination.current, pagination.pageSize);
   };
 
   // Configuración de columnas de la tabla
@@ -383,57 +336,41 @@ const UserList = () => {
           </Col>
         </Row>
 
-        {/* Tabla principal */}
-        <Card
+        {/* Tabla principal con TableBase */}
+        <TableBase
+          dataSource={users}
+          columns={columns}
+          loading={loading}
+          pagination={{
+            current: pagination.current,
+            pageSize: pagination.pageSize,
+            total: pagination.total,
+            showSizeChanger: true,
+            showQuickJumper: !isMobile,
+            pageSizeOptions: ['10', '15', '20', '30', '50', '100'],
+            showTotal: (total, range) => `${range[0]}-${range[1]} de ${total} usuarios`,
+            size: 'default',
+          }}
+          onTableChange={handleTableChange}
+          customSearchFilter={customSearchFilter}
+          searchPlaceholder="Buscar usuarios..."
           title="Lista de Usuarios"
-          extra={
-            <Space>
-              <Search
-                placeholder="Buscar usuarios..."
-                allowClear
-                onSearch={handleSearch}
-                onChange={(e) => {
-                  if (!e.target.value) {
-                    handleSearch('');
-                  }
-                }}
-                style={{ width: isMobile ? 150 : 200 }}
-                loading={loading && isSearching}
-              />
-              <Button 
-                type="primary" 
-                icon={<PlusOutlined />}
-                onClick={handleCreateUser}
-                style={{ 
-                  minWidth: isMobile ? 'auto' : 'auto',
-                  padding: isMobile ? '4px 8px' : undefined
-                }}
-              >
-                {!isMobile && 'Nuevo Usuario'}
-              </Button>
-            </Space>
+          onReload={loadUsers}
+          extraActions={
+            <Button 
+              type="primary" 
+              icon={<PlusOutlined />}
+              onClick={handleCreateUser}
+              style={{ 
+                minWidth: isMobile ? 'auto' : 'auto',
+                padding: isMobile ? '4px 8px' : undefined
+              }}
+            >
+              {!isMobile && 'Nuevo Usuario'}
+            </Button>
           }
-        >
-          <Table
-            columns={columns}
-            dataSource={users}
-            loading={loading}
-            pagination={{
-              current: pagination.current,
-              pageSize: pagination.pageSize,
-              total: pagination.total,
-              showSizeChanger: true,
-              showQuickJumper: !isMobile,
-              pageSizeOptions: ['10', '15', '20', '30', '50', '100'],
-              showTotal: (total, range) => 
-                `${range[0]}-${range[1]} de ${total} usuarios`,
-              size: 'default',
-            }}
-            onChange={handleTableChange}
-            rowKey="id"
-            scroll={{ x: isMobile ? 800 : undefined }}
-          />
-        </Card>
+          scroll={{ x: isMobile ? 800 : undefined }}
+        />
 
         {/* Modal de formulario */}
         <UserForm

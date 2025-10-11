@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Card, 
-  Table, 
   Button, 
   Space, 
   Typography, 
@@ -11,8 +10,7 @@ import {
   Statistic,
   Tooltip,
   Popconfirm,
-  Tag,
-  Input
+  Tag
 } from 'antd';
 import { 
   CarOutlined, 
@@ -22,13 +20,13 @@ import {
   ExclamationCircleOutlined,
   ReloadOutlined,
   CalendarOutlined,
-  SearchOutlined,
   TeamOutlined
 } from '@ant-design/icons';
 import { vehicleService } from '../../services/vehicleService';
 import AppLayout from '../AppLayout';
 import VehicleFormSimple from './VehicleFormSimple';
 import VehicleOwnersModal from './VehicleOwnersModal';
+import TableBase from '../common/TableBase';
 
 const { Title } = Typography;
 
@@ -37,8 +35,6 @@ const VehicleListSimple = () => {
   const [loading, setLoading] = useState(false);
   const [formVisible, setFormVisible] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState(null);
-  const [searchText, setSearchText] = useState('');
-  const [filteredVehicles, setFilteredVehicles] = useState([]);
   const [ownersModalVisible, setOwnersModalVisible] = useState(false);
   const [selectedVehicleId, setSelectedVehicleId] = useState(null);
   const [selectedVehiclePlaca, setSelectedVehiclePlaca] = useState('');
@@ -54,11 +50,6 @@ const VehicleListSimple = () => {
   useEffect(() => {
     loadVehicles();
   }, []);
-
-  // Actualizar filtros cuando cambien los vehículos
-  useEffect(() => {
-    handleSearch(searchText);
-  }, [vehicles]);
 
   const loadVehicles = async (page = 1, perPage = 15) => {
     setLoading(true);
@@ -124,26 +115,31 @@ const VehicleListSimple = () => {
     loadVehicles(newPagination.current, newPagination.pageSize);
   };
 
-  // Función para filtrar vehículos por placa
-  const handleSearch = (value) => {
-    setSearchText(value);
+  // Función de filtrado personalizado para múltiples campos
+  const customSearchFilter = (item, searchText) => {
+    const searchLower = searchText.toLowerCase();
     
-    if (!value) {
-      // Si no hay texto de búsqueda, mostrar todos los vehículos
-      setFilteredVehicles(vehicles);
-    } else {
-      // Filtrar por placa (búsqueda no sensible a mayúsculas/minúsculas)
-      const filtered = vehicles.filter(vehicle =>
-        vehicle.placa.toLowerCase().includes(value.toLowerCase())
-      );
-      setFilteredVehicles(filtered);
-    }
-  };
-
-  // Limpiar búsqueda
-  const handleClearSearch = () => {
-    setSearchText('');
-    setFilteredVehicles(vehicles);
+    // Buscar en placa
+    const placa = item.placa || '';
+    if (placa.toLowerCase().includes(searchLower)) return true;
+    
+    // Buscar en marca
+    const marca = item.marca || '';
+    if (marca.toLowerCase().includes(searchLower)) return true;
+    
+    // Buscar en modelo
+    const modelo = item.modelo || '';
+    if (modelo.toLowerCase().includes(searchLower)) return true;
+    
+    // Buscar en color
+    const color = item.color || '';
+    if (color.toLowerCase().includes(searchLower)) return true;
+    
+    // Buscar en tipo
+    const tipoVehiculo = item.tipo_vehiculo?.nombre || '';
+    if (tipoVehiculo.toLowerCase().includes(searchLower)) return true;
+    
+    return false;
   };
 
   // Abrir modal de propietarios
@@ -337,10 +333,10 @@ const VehicleListSimple = () => {
           <Col xs={12} sm={6} lg={6}>
             <Card>
               <Statistic
-                title={searchText ? "Vehículos Filtrados" : "Total Vehículos"}
-                value={searchText ? filteredVehicles.length : pagination.total}
+                title="Total Vehículos"
+                value={pagination.total}
                 prefix={<CarOutlined />}
-                valueStyle={{ color: searchText ? '#1890ff' : '#722ed1' }}
+                valueStyle={{ color: '#722ed1' }}
               />
             </Card>
           </Col>
@@ -369,7 +365,7 @@ const VehicleListSimple = () => {
             <Card>
               <Statistic
                 title="Marcas Únicas"
-                value={[...new Set(filteredVehicles.map(v => v.marca).filter(Boolean))].length}
+                value={[...new Set(vehicles.map(v => v.marca).filter(Boolean))].length}
                 prefix={<CarOutlined />}
                 valueStyle={{ color: '#ff4d4f' }}
               />
@@ -377,65 +373,38 @@ const VehicleListSimple = () => {
           </Col>
         </Row>
 
-        <Card
+        <TableBase
+          dataSource={vehicles}
+          columns={columns}
+          loading={loading}
+          pagination={{
+            current: pagination.current,
+            pageSize: pagination.pageSize,
+            total: pagination.total,
+            showSizeChanger: true,
+            showQuickJumper: true,
+            showTotal: (total, range) => `${range[0]}-${range[1]} de ${total} vehículos`,
+            pageSizeOptions: ['10', '20', '50', '100'],
+          }}
+          onTableChange={handleTableChange}
+          customSearchFilter={customSearchFilter}
+          searchPlaceholder="Buscar por placa, marca, modelo, color o tipo..."
           title="Lista de Vehículos"
-          extra={
-            <Space size="middle">
-                <Input.Search
-                placeholder="Buscar por placa..."
-                allowClear
-                enterButton={
-                  <Button type="primary" style={{ backgroundColor: '#722ed1', borderColor: '#722ed1' }}>
-                    <SearchOutlined />
-                  </Button>
-                }
-                size="large"
-                value={searchText}
-                onChange={(e) => handleSearch(e.target.value)}
-                onSearch={handleSearch}
-                style={{
-                  width: '100%',
-                }}
-              />
-              <Button 
-                icon={<ReloadOutlined />}
-                onClick={loadVehicles}
-                loading={loading}
-              >
-                Recargar
-              </Button>
-              <Button 
-                type="primary" 
-                icon={<PlusOutlined />}
-                onClick={handleCreate}
-                style={{ 
-                  backgroundColor: '#722ed1',
-                  borderColor: '#722ed1'
-                }}
-              >
-                Nuevo Vehículo
-              </Button>
-            </Space>
+          onReload={loadVehicles}
+          extraActions={
+            <Button 
+              type="primary" 
+              icon={<PlusOutlined />}
+              onClick={handleCreate}
+              style={{ 
+                backgroundColor: '#722ed1',
+                borderColor: '#722ed1'
+              }}
+            >
+              Nuevo Vehículo
+            </Button>
           }
-        >
-          <Table
-            columns={columns}
-            dataSource={filteredVehicles}
-            loading={loading}
-            rowKey="id"
-            pagination={searchText ? false : {
-              current: pagination.current,
-              pageSize: pagination.pageSize,
-              total: pagination.total,
-              showSizeChanger: true,
-              showQuickJumper: true,
-              showTotal: (total, range) =>
-                `${range[0]}-${range[1]} de ${total} vehículos`,
-              pageSizeOptions: ['10', '20', '50', '100'],
-            }}
-            onChange={handleTableChange}
-          />
-        </Card>
+        />
 
         {/* Modal del formulario */}
         <VehicleFormSimple

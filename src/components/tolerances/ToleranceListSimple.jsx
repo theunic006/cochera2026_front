@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Card, 
-  Table, 
   Button, 
   Space, 
   Typography, 
@@ -25,6 +24,7 @@ import {
 import { toleranceService } from '../../services/toleranceService';
 import AppLayout from '../AppLayout';
 import ToleranceFormSimple from './ToleranceFormSimple';
+import TableBase from '../common/TableBase';
 
 const { Title } = Typography;
 
@@ -106,6 +106,21 @@ const ToleranceList = () => {
 
   const handleTableChange = (newPagination) => {
     loadTolerances(newPagination.current, newPagination.pageSize);
+  };
+
+  // Función de filtrado personalizado para múltiples campos
+  const customSearchFilter = (item, searchText) => {
+    const searchLower = searchText.toLowerCase();
+    
+    // Buscar en descripción
+    const descripcion = item.descripcion || '';
+    if (descripcion.toLowerCase().includes(searchLower)) return true;
+    
+    // Buscar en minutos
+    const minutos = item.minutos?.toString() || '';
+    if (minutos.includes(searchLower)) return true;
+    
+    return false;
   };
 
   const columns = [
@@ -254,49 +269,38 @@ const ToleranceList = () => {
           </Col>
         </Row>
 
-        <Card
+        <TableBase
+          dataSource={tolerances}
+          columns={columns}
+          loading={loading}
+          pagination={{
+            current: pagination.current,
+            pageSize: pagination.pageSize,
+            total: pagination.total,
+            showSizeChanger: true,
+            showQuickJumper: true,
+            showTotal: (total, range) => `${range[0]}-${range[1]} de ${total} tolerancias`,
+            pageSizeOptions: ['10', '20', '50', '100'],
+          }}
+          onTableChange={handleTableChange}
+          customSearchFilter={customSearchFilter}
+          searchPlaceholder="Buscar por descripción o minutos..."
           title="Lista de Tolerancias"
-          extra={
-            <Space size="middle">
-              <Button 
-                icon={<ReloadOutlined />}
-                onClick={loadTolerances}
-                loading={loading}
-              >
-                Recargar
-              </Button>
-              <Button 
-                type="primary" 
-                icon={<PlusOutlined />}
-                onClick={handleCreate}
-                style={{ 
-                  backgroundColor: '#722ed1',
-                  borderColor: '#722ed1'
-                }}
-              >
-                Nueva Tolerancia
-              </Button>
-            </Space>
+          onReload={loadTolerances}
+          extraActions={
+            <Button 
+              type="primary" 
+              icon={<PlusOutlined />}
+              onClick={handleCreate}
+              style={{ 
+                backgroundColor: '#722ed1',
+                borderColor: '#722ed1'
+              }}
+            >
+              Nueva Tolerancia
+            </Button>
           }
-        >
-          <Table
-            columns={columns}
-            dataSource={tolerances}
-            loading={loading}
-            rowKey="id"
-            pagination={{
-              current: pagination.current,
-              pageSize: pagination.pageSize,
-              total: pagination.total,
-              showSizeChanger: true,
-              showQuickJumper: true,
-              showTotal: (total, range) =>
-                `${range[0]}-${range[1]} de ${total} tolerancias`,
-              pageSizeOptions: ['10', '20', '50', '100'],
-            }}
-            onChange={handleTableChange}
-          />
-        </Card>
+        />
 
         {/* Modal del formulario */}
         <ToleranceFormSimple

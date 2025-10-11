@@ -1,43 +1,6 @@
-import axios from 'axios';
 
-// Configuración base de la API
-const API_BASE_URL = 'http://localhost:8000/api';
-
-// Crear instancia de axios con configuración base
-const apiClient = axios.create({
-  baseURL: API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
-
-// Interceptor para agregar token de autenticación si existe
-apiClient.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('access_token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
-
-// Interceptor para manejar respuestas y errores
-apiClient.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      // Token expirado o inválido
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('user');
-      window.location.href = '/login';
-    }
-    return Promise.reject(error);
-  }
-);
+import apiClient from '../utils/apiClient';
+import { handleApiError, normalizePaginationResponse } from '../utils/apiHelpers';
 
 export const companyService = {
   /**
@@ -51,10 +14,9 @@ export const companyService = {
       const response = await apiClient.get('/companies', {
         params: { page, per_page: perPage }
       });
-      return response.data;
+      return normalizePaginationResponse(response, page, perPage);
     } catch (error) {
-      console.error('Error al obtener empresas:', error);
-      throw this.handleError(error);
+      return handleApiError(error);
     }
   },
 
@@ -114,10 +76,9 @@ export const companyService = {
         config = { headers: { ...apiClient.defaults.headers, 'Content-Type': undefined } };
       }
       const response = await apiClient.post(`/companies/${id}?_method=PUT`, companyData, config);
-      return response.data;
+      return { success: true, data: response.data };
     } catch (error) {
-      console.error('Error al actualizar empresa:', error);
-      throw this.handleError(error);
+      return handleApiError(error);
     }
   },
 
@@ -129,10 +90,9 @@ export const companyService = {
   async deleteCompany(id) {
     try {
       const response = await apiClient.delete(`/companies/${id}`);
-      return response.data;
+      return { success: true, data: response.data };
     } catch (error) {
-      console.error('Error al eliminar empresa:', error);
-      throw this.handleError(error);
+      return handleApiError(error);
     }
   },
 
@@ -152,10 +112,9 @@ export const companyService = {
           per_page: perPage 
         }
       });
-      return response.data;
+      return normalizePaginationResponse(response, page, perPage);
     } catch (error) {
-      console.error('Error al buscar empresas:', error);
-      throw this.handleError(error);
+      return handleApiError(error);
     }
   },
 
@@ -166,10 +125,9 @@ export const companyService = {
   async getStatuses() {
     try {
       const response = await apiClient.get('/companies/statuses');
-      return response.data;
+      return { success: true, data: response.data };
     } catch (error) {
-      console.error('Error al obtener estados:', error);
-      throw this.handleError(error);
+      return handleApiError(error);
     }
   },
 
@@ -189,10 +147,9 @@ export const companyService = {
           per_page: perPage 
         }
       });
-      return response.data;
+      return normalizePaginationResponse(response, page, perPage);
     } catch (error) {
-      console.error('Error al filtrar empresas por estado:', error);
-      throw this.handleError(error);
+      return handleApiError(error);
     }
   },
 
@@ -204,10 +161,9 @@ export const companyService = {
   async activateCompany(id) {
     try {
       const response = await apiClient.patch(`/companies/${id}/activate`);
-      return response.data;
+      return { success: true, data: response.data };
     } catch (error) {
-      console.error('Error al activar empresa:', error);
-      throw this.handleError(error);
+      return handleApiError(error);
     }
   },
 
@@ -219,10 +175,9 @@ export const companyService = {
   async suspendCompany(id) {
     try {
       const response = await apiClient.patch(`/companies/${id}/suspend`);
-      return response.data;
+      return { success: true, data: response.data };
     } catch (error) {
-      console.error('Error al suspender empresa:', error);
-      throw this.handleError(error);
+      return handleApiError(error);
     }
   },
 
@@ -237,64 +192,28 @@ export const companyService = {
       const response = await apiClient.patch(`/companies/${id}/change-status`, {
         status
       });
-      return response.data;
+      return { success: true, data: response.data };
     } catch (error) {
-      console.error('Error al cambiar estado de empresa:', error);
-      throw this.handleError(error);
+      return handleApiError(error);
     }
   },
 
   /**
-   * Manejar errores de la API
-   * @param {Object} error - Error de axios
-   * @returns {Object} Error formateado
+   * Actualizar configuración de impresoras de una empresa
+   * @param {number} id - ID de la empresa
+   * @param {Object} printerConfig - Configuración de impresoras
+   * @param {string} printerConfig.imp_input - Impresora de entrada
+   * @param {string} printerConfig.imp_output - Impresora de salida
+   * @returns {Promise} Respuesta de la API
    */
-  handleError(error) {
-    if (error.response) {
-      // Error de respuesta del servidor
-      const { status, data } = error.response;
-      
-      if (status === 422 && data.errors) {
-        // Errores de validación
-        return {
-          type: 'validation',
-          errors: data.errors,
-          message: data.message || 'Errores de validación'
-        };
-      }
-      
-      if (status === 401) {
-        return {
-          type: 'auth',
-          message: 'No tienes autorización para realizar esta acción'
-        };
-      }
-      
-      if (status === 404) {
-        return {
-          type: 'not_found',
-          message: 'Empresa no encontrada'
-        };
-      }
-      
-      return {
-        type: 'server',
-        message: data.message || `Error del servidor (${status})`
-      };
+  async updatePrinters(id, printerConfig) {
+    try {
+      const response = await apiClient.put(`/companies/${id}`, printerConfig);
+      return { success: true, data: response.data };
+    } catch (error) {
+      return handleApiError(error);
     }
-    
-    if (error.request) {
-      // Error de red o conexión
-      return {
-        type: 'network',
-        message: 'Error de conexión. Verifica tu conexión a internet.'
-      };
-    }
-    
-    // Error desconocido
-    return {
-      type: 'unknown',
-      message: error.message || 'Error desconocido'
-    };
-  }
+  },
+
+  // ...eliminada función handleError, ahora se usa handleApiError global
 };

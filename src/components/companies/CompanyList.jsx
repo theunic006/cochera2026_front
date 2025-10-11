@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { 
   Card, 
-  Table, 
   Button, 
   Space, 
   Tag, 
@@ -12,11 +11,9 @@ import {
   Statistic, 
   Typography, 
   message,
-  Modal,
   Tooltip,
   Popconfirm,
-  Select,
-  Dropdown
+  Select
 } from 'antd';
 import { 
   BankOutlined, 
@@ -30,7 +27,6 @@ import {
   EnvironmentOutlined,
   CheckCircleOutlined,
   StopOutlined,
-  MoreOutlined,
   FilterOutlined,
   PauseCircleOutlined,
   ClockCircleOutlined
@@ -38,9 +34,9 @@ import {
 import { companyService } from '../../services/companyService';
 import CompanyForm from './CompanyForm';
 import AppLayout from '../AppLayout';
+import TableBase from '../common/TableBase';
 
 const { Title, Text } = Typography;
-const { Search } = Input;
 const { Option } = Select;
 
 const CompanyList = () => {
@@ -56,9 +52,7 @@ const CompanyList = () => {
     pageSizeOptions: ['10', '15', '20', '50', '100'],
   });
   
-  // Estados para búsqueda y filtros
-  const [searchText, setSearchText] = useState('');
-  const [isSearching, setIsSearching] = useState(false);
+  // Estados para filtros específicos (mantengo estos para funcionalidad avanzada)
   const [statusFilter, setStatusFilter] = useState('');
   const [availableStatuses, setAvailableStatuses] = useState([]);
   
@@ -120,24 +114,18 @@ const CompanyList = () => {
     }
   };
 
-  // Función para cargar empresas
+  // Función para cargar empresas (simplificada)
   const loadCompanies = async (page = 1, pageSize = 15) => {
-
     setLoading(true);
     try {
       let response;
       
-      if (searchText.trim()) {
-        // Si hay búsqueda activa
-        response = await companyService.searchCompanies(searchText, page, pageSize);
-        setIsSearching(true);
-      } else if (statusFilter) {
+      if (statusFilter) {
         // Si hay filtro de estado activo
         response = await companyService.getCompaniesByStatus(statusFilter, page, pageSize);
       } else {
         // Carga normal
         response = await companyService.getCompanies(page, pageSize);
-        setIsSearching(false);
       }
 
       if (response.success) {
@@ -167,28 +155,31 @@ const CompanyList = () => {
 
   // Manejar cambio de página y tamaño de página
   const handleTableChange = (paginationInfo) => {
-
-    
-    // No actualizar el estado aquí - dejamos que loadCompanies lo haga
     loadCompanies(paginationInfo.current, paginationInfo.pageSize);
   };
 
-  // Manejar búsqueda
-  const handleSearch = (value) => {
-    setSearchText(value);
-    setStatusFilter('');
-    if (value.trim()) {
-      loadCompanies(1, pagination.pageSize);
-    } else {
-      // Si no hay búsqueda, recargar empresas normales
-      loadCompanies(1, pagination.pageSize);
-    }
+  // Función de filtrado personalizado para múltiples campos
+  const customSearchFilter = (item, searchText) => {
+    const searchLower = searchText.toLowerCase();
+    
+    // Buscar en nombre
+    const nombre = item.nombre || '';
+    if (nombre.toLowerCase().includes(searchLower)) return true;
+    
+    // Buscar en ubicación
+    const ubicacion = item.ubicacion || '';
+    if (ubicacion.toLowerCase().includes(searchLower)) return true;
+    
+    // Buscar en estado
+    const estado = item.estado || '';
+    if (estado.toLowerCase().includes(searchLower)) return true;
+    
+    return false;
   };
 
-  // Manejar filtro por estado
+  // Manejar filtro por estado (mantenido para funcionalidad específica)
   const handleStatusFilter = (status) => {
     setStatusFilter(status);
-    setSearchText('');
     if (status) {
       loadCompanies(1, pagination.pageSize);
     } else {
@@ -198,7 +189,6 @@ const CompanyList = () => {
 
   // Limpiar filtros
   const clearFilters = () => {
-    setSearchText('');
     setStatusFilter('');
     loadCompanies(1, pagination.pageSize);
   };
@@ -468,15 +458,6 @@ const CompanyList = () => {
                 <BankOutlined style={{ marginRight: 8 }} />
                 Lista de Empresas
               </Title>
-              <Button
-                type="primary"
-                icon={<PlusOutlined />}
-                onClick={handleCreateCompany}
-                size="large"
-                style={{ backgroundColor: '#1890ff' }}
-              >
-                Nueva Empresa
-              </Button>
             </div>
           </Col>
         </Row>
@@ -545,21 +526,10 @@ const CompanyList = () => {
           </Col>
         </Row>
 
-        {/* Filtros y búsqueda */}
+        {/* Filtros por estado (mantenidos para funcionalidad específica) */}
         <Card style={{ marginBottom: 24 }}>
           <Row gutter={[16, 16]}>
             <Col xs={24} sm={12} md={8}>
-              <Search
-                placeholder="Buscar empresas..."
-                allowClear
-                enterButton={<SearchOutlined />}
-                size="large"
-                value={searchText}
-                onChange={(e) => setSearchText(e.target.value)}
-                onSearch={handleSearch}
-              />
-            </Col>
-            <Col xs={24} sm={12} md={6}>
               <Select
                 placeholder="Filtrar por estado"
                 allowClear
@@ -576,7 +546,7 @@ const CompanyList = () => {
                 ))}
               </Select>
             </Col>
-            <Col xs={24} sm={24} md={10}>
+            <Col xs={24} sm={24} md={16}>
               <Space>
                 <Button
                   icon={<ReloadOutlined />}
@@ -585,14 +555,14 @@ const CompanyList = () => {
                 >
                   Actualizar
                 </Button>
-                {(searchText || statusFilter) && (
+                {statusFilter && (
                   <Button onClick={clearFilters}>
                     Limpiar Filtros
                   </Button>
                 )}
-                {isSearching && (
+                {statusFilter && (
                   <Text type="secondary">
-                    Mostrando resultados para: "{searchText}"
+                    Filtrando por estado: {availableStatuses.find(s => s.value === statusFilter)?.label}
                   </Text>
                 )}
               </Space>
@@ -600,29 +570,39 @@ const CompanyList = () => {
           </Row>
         </Card>
 
-        {/* Tabla de empresas */}
-        <Card>
-          <Table
-            columns={columns}
-            dataSource={companies}
-            loading={loading}
-            pagination={{
-              current: pagination.current,
-              pageSize: pagination.pageSize,
-              total: pagination.total,
-              showSizeChanger: true,
-              showQuickJumper: true,
-              pageSizeOptions: ['10', '15', '20', '50', '100'],
-              showTotal: (total, range) => 
-                `${range[0]}-${range[1]} de ${total} empresas`,
-              size: 'default',
-            }}
-            onChange={handleTableChange}
-            rowKey="id"
-            scroll={{ x: 800 }}
-            size={isMobile ? 'small' : 'middle'}
-          />
-        </Card>
+        {/* Tabla con TableBase */}
+        <TableBase
+          dataSource={companies}
+          columns={columns}
+          loading={loading}
+          pagination={{
+            current: pagination.current,
+            pageSize: pagination.pageSize,
+            total: pagination.total,
+            showSizeChanger: true,
+            showQuickJumper: true,
+            pageSizeOptions: ['10', '15', '20', '50', '100'],
+            showTotal: (total, range) => `${range[0]}-${range[1]} de ${total} empresas`,
+            size: 'default',
+          }}
+          onTableChange={handleTableChange}
+          customSearchFilter={customSearchFilter}
+          searchPlaceholder="Buscar por nombre, ubicación o estado..."
+          title="Lista de Empresas"
+          onReload={loadCompanies}
+          extraActions={
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={handleCreateCompany}
+              style={{ backgroundColor: '#1890ff' }}
+            >
+              Nueva Empresa
+            </Button>
+          }
+          scroll={{ x: 800 }}
+          size={isMobile ? 'small' : 'middle'}
+        />
 
         {/* Modal del formulario */}
         <CompanyForm

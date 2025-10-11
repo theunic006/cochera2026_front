@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Table, Button, Space, Typography, message, Modal, Tooltip, Popconfirm, Statistic, Row, Col, Input } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, ReloadOutlined, CalendarOutlined, CarOutlined, UserOutlined, BankOutlined, TagOutlined } from '@ant-design/icons';
+import { Typography, message } from 'antd';
+import { CalendarOutlined, CarOutlined, UserOutlined, TagOutlined } from '@ant-design/icons';
 import { registroService } from '../../services/registroService';
 import RegistroForm from './RegistroForm';
 import AppLayout from '../AppLayout';
-import { DollarOutlined } from '@ant-design/icons';
+import TableBase from '../common/TableBase';
 
 const { Title } = Typography;
-const { Search } = Input;
 
 const RegistroList = () => {
   const [loading, setLoading] = useState(false);
@@ -20,7 +19,6 @@ const RegistroList = () => {
     showQuickJumper: true,
     pageSizeOptions: ['10', '15', '20', '50', '100'],
   });
-  const [searchText, setSearchText] = useState('');
   const [registroFormVisible, setRegistroFormVisible] = useState(false);
   const [editingRegistro, setEditingRegistro] = useState(null);
 
@@ -156,53 +154,20 @@ const columns = [
   return (
     <AppLayout>
       <div>
-        <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-          <Col xs={12} sm={8} lg={6}>
-            <Card>
-              <Statistic
-                title="Total Registros"
-                value={pagination.total}
-                prefix={<CalendarOutlined />}
-                valueStyle={{ color: '#722ed1' }}
-              />
-            </Card>
-          </Col>
-          <Col xs={12} sm={8} lg={6}>
-            <Card>
-              <Button
-                icon={<ReloadOutlined />}
-                onClick={() => loadRegistros()}
-                loading={loading}
-                block
-              >
-                Actualizar
-              </Button>
-            </Card>
-          </Col>
-        </Row>
-        <Card
+        <TableBase
+          columns={columns}
+          dataSource={registros}
+          loading={loading}
+          pagination={pagination}
+          onTableChange={handleTableChange}
+          onReload={() => loadRegistros()}
+          searchPlaceholder="Buscar por placa..."
+          searchFilterKey="placa"
           title="Lista de Registros"
-
-        >
-          <Table
-            columns={columns}
-            dataSource={registros}
-            loading={loading}
-            pagination={{
-              current: pagination.current,
-              pageSize: pagination.pageSize,
-              total: pagination.total,
-              showSizeChanger: true,
-              showQuickJumper: true,
-              pageSizeOptions: ['10', '15', '20', '50', '100'],
-              showTotal: (total, range) => `${range[0]}-${range[1]} de ${total} registros`,
-              size: 'default',
-            }}
-            onChange={handleTableChange}
-            rowKey="id"
-            scroll={{ x: 800 }}
-          />
-        </Card>
+          statsTitle="Total Registros"
+          statsIcon={<CalendarOutlined />}
+          scroll={{ x: 800 }}
+        />
         <RegistroForm
           visible={registroFormVisible}
           onCancel={() => {

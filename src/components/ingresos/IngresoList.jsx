@@ -1,41 +1,46 @@
-import React, { useEffect, useState } from 'react';
-import { Table, Card, Button, Space, Tooltip, Statistic, Row, Col, message, Popconfirm, Tag, Input, Modal, Form, Select, Checkbox } from 'antd';
-import { CarOutlined, ClockCircleOutlined, DollarOutlined, TagOutlined, CheckCircleOutlined, ReloadOutlined } from '@ant-design/icons';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import { calcularTiempoEstadiaConTolerancia } from '../../utils/CalValores';
+import { Card, Button, Space, Tooltip, Row, Col, message, Tag, Input } from 'antd';
+import { CarOutlined, ClockCircleOutlined, DollarOutlined, TagOutlined, CheckCircleOutlined } from '@ant-design/icons';
+import TableBase from '../common/TableBase';
 import { ingresoService } from '../../services/ingresoService';
 import { vehiculoService } from '../../services/vehiculoService';
 import AppLayout from '../AppLayout';
 import EditarForm from './EditarForm';
 import TerminarModal from './TerminarModal';
 import { vehicleTypeService } from '../../services/vehicleTypeService';
+import { toleranceService } from '../../services/toleranceService';
+import { useAuth } from '../../context/AuthContext';
 
 const { Search } = Input;
-const calcularTiempoEstadia = (fecha, hora) => {
-  if (!fecha || !hora) return { horas: 0, minutos: 0, texto: '-' };
-  const ingreso = new Date(`${fecha}T${hora}`);
-  const ahora = new Date();
-  const diffMs = ahora - ingreso;
-  if (isNaN(diffMs)) return { horas: 0, minutos: 0, texto: '-' };
-  const horas = Math.floor(diffMs / (1000 * 60 * 60));
-  const minutos = Math.floor((diffMs / (1000 * 60)) % 60);
-  const fracciones = Math.ceil(diffMs / (1000 * 60 * 60)); // Para el cobro por fracción
-  return { horas, minutos, fracciones, texto: `${horas}h ${minutos}m` };
-};
+
+// Componente optimizado para el input de nueva placa
+const PlacaInput = React.memo(({ value, onChange, onRegister, loading, disabled }) => (
+  <Space>
+    <Input
+      type="text"
+      placeholder="Placa para nuevo ingreso"
+      value={value}
+      onChange={onChange}
+      style={{ width: 180, padding: 6, borderRadius: 4 }}
+      maxLength={15}
+      autoComplete="off"
+    />
+    <Button
+      type="primary"
+      loading={loading}
+      disabled={disabled}
+      onClick={onRegister}
+    >
+      Registrar Ingreso
+    </Button>
+  </Space>
+));
 
 const IngresoList = () => {
+  const { user } = useAuth();
+  const [toleranciaMinutos, setToleranciaMinutos] = useState(null);
   const [tiposVehiculo, setTiposVehiculo] = useState([]);
-  // Cargar tipos de vehículo al montar
-  useEffect(() => {
-    const fetchTiposVehiculo = async () => {
-      const response = await vehicleTypeService.getAllVehicleTypes();
-      if (response.success && Array.isArray(response.data)) {
-        setTiposVehiculo(response.data);
-      } else {
-        setTiposVehiculo([]);
-      }
-    };
-    fetchTiposVehiculo();
-  }, []);
-  const [searchText, setSearchText] = useState("");
   const [nuevaPlaca, setNuevaPlaca] = useState("");
   const [registrando, setRegistrando] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -57,21 +62,19 @@ const IngresoList = () => {
   const [terminarModalVisible, setTerminarModalVisible] = useState(false);
   const [ingresoTerminar, setIngresoTerminar] = useState(null);
 
-  useEffect(() => {
-    cargarIngresos();
-  }, []);
-
-  const cargarIngresos = async (page = 1, pageSize = 15) => {
+  // Función para cargar ingresos
+  const cargarIngresos = useCallback(async (page = 1, pageSize = 15) => {
     setLoading(true);
     try {
       const response = await ingresoService.getIngresos(page, pageSize);
       if (response.success) {
         setIngresos(response.data);
-        setPagination({
+        setPagination(prev => ({
+          ...prev,
           current: response.pagination?.current_page || page,
           pageSize: response.pagination?.per_page || pageSize,
           total: response.pagination?.total || response.data.length,
-        });
+        }));
       } else {
         message.error('Error al cargar ingresos');
       }
@@ -80,13 +83,102 @@ const IngresoList = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const handleTableChange = (newPagination) => {
+  // Cargar tipos de vehículo y tolerancia al montar
+  useEffect(() => {
+    const fetchTiposVehiculo = async () => {
+      const response = await vehicleTypeService.getAllVehicleTypes();
+      if (response.success && Array.isArray(response.data)) {
+        setTiposVehiculo(response.data);
+      } else {
+        setTiposVehiculo([]);
+      }
+    };
+    fetchTiposVehiculo();
+
+    // Obtener tolerancia de la empresa actual usando el servicio
+    const fetchTolerancia = async () => {
+      if (user && user.id_company) {
+        try {
+          const tolerancia = await toleranceService.getToleranceByEmpresa(user.id_company);
+          let minutosTolerancia = null;
+          if (
+            tolerancia &&
+            tolerancia.data &&
+            Array.isArray(tolerancia.data.data) &&
+            tolerancia.data.data[0]
+          ) {
+            minutosTolerancia = tolerancia.data.data[0].minutos;
+          }
+          setToleranciaMinutos(minutosTolerancia);
+        } catch (err) {
+          setToleranciaMinutos(null);
+        }
+      }
+    };
+    fetchTolerancia();
+  }, [user]);
+
+  useEffect(() => {
+    cargarIngresos();
+  }, [cargarIngresos]);
+
+  // Función optimizada para manejar cambios en la placa
+  const handlePlacaChange = useCallback((e) => {
+    const value = e.target.value;
+    // Solo convertir a mayúsculas, mover validaciones al momento del submit
+    setNuevaPlaca(value.toUpperCase());
+  }, []);
+
+  // Función para limpiar y validar placa antes de enviar
+  const cleanPlacaForSubmit = useCallback((placa) => {
+    return placa.replace(/[^A-Z0-9-]/g, '').trim();
+  }, []);
+
+  // Función memoizada para registrar nuevo ingreso
+  const handleRegistrarIngreso = useCallback(async () => {
+    setRegistrando(true);
+    try {
+      // Limpiar y validar placa antes de procesar
+      const placaLimpia = cleanPlacaForSubmit(nuevaPlaca);
+      
+      if (!placaLimpia) {
+        message.warning('Ingrese una placa válida (solo letras, números y guiones)');
+        setRegistrando(false);
+        return;
+      }
+
+      // Verificar si la placa ya está registrada en ingresos activos
+      const placaExiste = ingresos.some(
+        i => i.vehiculo?.placa?.toUpperCase() === placaLimpia
+      );
+      if (placaExiste) {
+        message.success('Vehículo en cochera');
+        setRegistrando(false);
+        return;
+      }
+      // Aquí deberías llamar a la API para registrar el ingreso
+      const response = await vehiculoService.createVehiculo({ placa: placaLimpia });
+      if (response.success) {
+        message.success('Ingreso correctamente');
+        setNuevaPlaca("");
+        cargarIngresos();
+      } else {
+        message.error(response.message || 'Error al registrar ingreso');
+      }
+    } catch (error) {
+      message.error(error.message || 'Error al registrar ingreso');
+    } finally {
+      setRegistrando(false);
+    }
+  }, [nuevaPlaca, ingresos, cleanPlacaForSubmit, cargarIngresos]);
+
+  const handleTableChange = useCallback((newPagination) => {
     cargarIngresos(newPagination.current, newPagination.pageSize);
-  };
+  }, [cargarIngresos]);
 
-  const handleTerminar = async (ingreso) => {
+  const handleTerminar = useCallback(async (ingreso) => {
     // Refrescar datos del ingreso desde el backend antes de mostrar el modal
     try {
       const res = await ingresoService.getIngresoById(ingreso.id);
@@ -99,9 +191,22 @@ const IngresoList = () => {
     } catch (err) {
       message.error('Error al obtener información actualizada');
     }
-  };
+  }, []);
 
-  const columns = [
+  // Función memoizada para recargar datos
+  const handleReload = useCallback(() => {
+    cargarIngresos(pagination.current, pagination.pageSize);
+  }, [cargarIngresos, pagination.current, pagination.pageSize]);
+
+  // Función optimizada para editar ingreso
+  const handleEditIngreso = useCallback((record) => {
+    setIngresoEdit(record);
+    setPlacaEdit(record.vehiculo.placa);
+    setModalVisible(true);
+  }, []);
+
+  // Memoizar las columnas para evitar re-renders innecesarios
+  const columns = useMemo(() => [
     {
       title: 'Placa',
       dataIndex: ['vehiculo', 'placa'],
@@ -113,11 +218,7 @@ const IngresoList = () => {
             color='primary'
             variant='outlined'
             type="link"
-            onClick={() => {
-              setIngresoEdit(record);
-              setPlacaEdit(record.vehiculo.placa);
-              setModalVisible(true);
-            }}
+            onClick={() => handleEditIngreso(record)}
           >
             {record.vehiculo.placa}
           </Button>
@@ -135,7 +236,7 @@ const IngresoList = () => {
       title: 'Tiempo de Estadia',
       key: 'tiempo_estadia',
       render: (_, record) => {
-        const tiempo = calcularTiempoEstadia(record.fecha_ingreso, record.hora_ingreso);
+        const tiempo = calcularTiempoEstadiaConTolerancia(record.fecha_ingreso, record.hora_ingreso, toleranciaMinutos);
         return <span><ClockCircleOutlined /> {tiempo.texto}</span>;
       },
     },
@@ -144,7 +245,7 @@ const IngresoList = () => {
       key: 'precio',
       render: (_, record) => {
         const valor = record.vehiculo?.tipo_vehiculo?.valor;
-        return valor ? <span>S/ {valor}</span> : <span style={{color: '#aaa'}}>Sin valor</span>;
+        return valor ? <span>S/ {valor}.00</span> : <span style={{color: '#aaa'}}>Sin valor</span>;
       },
     },
     {
@@ -152,9 +253,9 @@ const IngresoList = () => {
       key: 'total_pagar',
       render: (_, record) => {
         const valor = record.vehiculo?.tipo_vehiculo?.valor || 0;
-        const tiempo = calcularTiempoEstadia(record.fecha_ingreso, record.hora_ingreso);
+        const tiempo = calcularTiempoEstadiaConTolerancia(record.fecha_ingreso, record.hora_ingreso, toleranciaMinutos);
         const total = valor * (tiempo.fracciones > 0 ? tiempo.fracciones : 1);
-        return <span> S/ {total}</span>;
+        return <span> S/ {total}.00</span>;
       },
     },
     {
@@ -178,7 +279,7 @@ const IngresoList = () => {
         </Tooltip>
       ),
     },
-  ];
+  ], [toleranciaMinutos, handleEditIngreso, handleTerminar]);
 
   return (
     <AppLayout>
@@ -213,7 +314,7 @@ const IngresoList = () => {
               setModalVisible(false);
               setIngresoEdit(null);
               setPlacaEdit("");
-              cargarIngresos(pagination.current, pagination.pageSize);
+              cargarIngresos();
             } else {
               message.error(response.message || 'Error al actualizar ingreso');
             }
@@ -250,125 +351,42 @@ const IngresoList = () => {
         onPagoEfectivo={() => {
           setTerminarModalVisible(false);
           message.success('Pago registrado: Efectivo');
-          cargarIngresos(pagination.current, pagination.pageSize);
+          cargarIngresos();
         }}
         onPagoYape={() => {
           setTerminarModalVisible(false);
           message.success('Pago registrado: Yape');
-          cargarIngresos(pagination.current, pagination.pageSize);
+          cargarIngresos();
         }}
       />
       <div>
         <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
           <Col xs={24} sm={24} lg={12} style={{ marginBottom: 16 }}>
             <Card>
-              <Space>
-                <Input
-                  type="text"
-                  placeholder="Placa para nuevo ingreso"
-                  value={nuevaPlaca}
-                  onChange={e => setNuevaPlaca(e.target.value.replace(/[^A-Z0-9-]/gi, '').toUpperCase())}
-                  style={{ width: 180, padding: 6, borderRadius: 4, textTransform: 'uppercase' }}
-                  maxLength={15}
-                  autoComplete="off"
-                />
-                <Button
-                  type="primary"
-                  loading={registrando}
-                  disabled={!nuevaPlaca.trim()}
-                  onClick={async () => {
-                    setRegistrando(true);
-                    try {
-                      // Verificar si la placa ya está registrada en ingresos activos
-                      const placaExiste = ingresos.some(
-                        i => i.vehiculo?.placa?.toUpperCase() === nuevaPlaca.trim()
-                      );
-                      if (placaExiste) {
-                        message.success('Vehículo en cochera');
-                        setRegistrando(false);
-                        return;
-                      }
-                      // Aquí deberías llamar a la API para registrar el ingreso
-                      const response = await vehiculoService.createVehiculo({ placa: nuevaPlaca.trim() });
-                      if (response.success) {
-                        message.success('Ingreso correctamente');
-                        setNuevaPlaca("");
-                        cargarIngresos(pagination.current, pagination.pageSize);
-                      } else {
-                        message.error(response.message || 'Error al registrar ingreso');
-                      }
-                    } catch (error) {
-                      message.error(error.message || 'Error al registrar ingreso');
-                    } finally {
-                      setRegistrando(false);
-                    }
-                  }}
-                >
-                  Registrar Ingreso
-                </Button>
-              </Space>
-            </Card>
-          </Col>
-          <Col xs={12} sm={8} lg={6}>
-            <Card>
-              <Statistic
-                title="Total Ingresos"
-                value={pagination.total}
-                prefix={<CarOutlined />}
-                valueStyle={{ color: '#722ed1' }}
+              <PlacaInput
+                value={nuevaPlaca}
+                onChange={handlePlacaChange}
+                onRegister={handleRegistrarIngreso}
+                loading={registrando}
+                disabled={!nuevaPlaca.trim()}
               />
             </Card>
           </Col>
-          <Col xs={12} sm={8} lg={6}>
-            <Card>
-              <Button
-                icon={<ReloadOutlined />}
-                onClick={() => cargarIngresos()}
-                loading={loading}
-                block
-              >
-                Actualizar
-              </Button>
-            </Card>
-          </Col>
         </Row>
-        <Card
+
+        <TableBase
+          columns={columns}
+          dataSource={ingresos}
+          loading={loading}
+          pagination={pagination}
+          onTableChange={handleTableChange}
+          onReload={handleReload}
+          searchPlaceholder="Buscar por placa..."
+          searchFilterPath="vehiculo.placa"
           title="Lista de Ingresos"
-          extra={
-            <Input
-              type="text"
-              placeholder="Buscar por placa..."
-              value={searchText}
-              onChange={e => setSearchText(e.target.value.replace(/[^A-Z0-9]/gi, '').toUpperCase())}
-              style={{ width: 200, padding: 6, borderRadius: 4, textTransform: 'uppercase' }}
-              maxLength={15}
-              autoComplete="off"
-            />
-          }
-        >
-          <Table
-            columns={columns}
-            dataSource={
-              searchText.trim()
-                ? ingresos.filter(i => i.vehiculo?.placa?.toUpperCase().includes(searchText.trim()))
-                : ingresos
-            }
-            loading={loading}
-            pagination={{
-              current: pagination.current,
-              pageSize: pagination.pageSize,
-              total: pagination.total,
-              showSizeChanger: true,
-              showQuickJumper: true,
-              pageSizeOptions: ['10', '15', '20', '50', '100'],
-              showTotal: (total, range) => `${range[0]}-${range[1]} de ${total} ingresos`,
-              size: 'default',
-            }}
-            onChange={handleTableChange}
-            rowKey="id"
-            scroll={{ x: 900 }}
-          />
-        </Card>
+          statsTitle="Total Ingresos"
+          statsIcon={<CarOutlined />}
+        />
       </div>
     </AppLayout>
   );

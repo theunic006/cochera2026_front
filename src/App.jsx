@@ -6,6 +6,7 @@ import { ThemeProvider, useTheme } from './context/ThemeContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import Login from './components/Login';
 import Dashboard from './components/Dashboard';
+import PerfilUsuario from './components/perfil/PerfilUsuario';
 import UserList from './components/users/UserList';
 import RoleList from './components/roles/RoleList';
 import { CompanyList } from './components/companies';
@@ -180,7 +181,7 @@ const AppRouter = () => {
         path="/perfil" 
         element={
           <ProtectedRoute>
-            <Dashboard />
+            <PerfilUsuario />
           </ProtectedRoute>
         } 
       />

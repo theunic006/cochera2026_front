@@ -1,43 +1,5 @@
-import axios from 'axios';
-
-// Configuración base de la API
-const API_BASE_URL = 'http://localhost:8000/api';
-
-// Crear instancia de axios con configuración base
-const apiClient = axios.create({
-  baseURL: API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
-
-// Interceptor para agregar token de autenticación si existe
-apiClient.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('access_token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
-
-// Interceptor para manejar respuestas y errores
-apiClient.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      // Token expirado o inválido
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('user');
-      window.location.href = '/login';
-    }
-    return Promise.reject(error);
-  }
-);
+import apiClient from '../utils/apiClient';
+import { handleApiError, normalizePaginationResponse } from '../utils/apiHelpers';
 
 export const toleranceService = {
   /**
@@ -49,10 +11,9 @@ export const toleranceService = {
   async getTolerances(page = 1, perPage = 15) {
     try {
       const response = await apiClient.get(`/tolerancias?page=${page}&per_page=${perPage}`);
-      return response.data;
+      return normalizePaginationResponse(response, page, perPage);
     } catch (error) {
-      console.error('Error al obtener tolerancias:', error);
-      throw this.handleError(error);
+      return handleApiError(error);
     }
   },
 
@@ -64,10 +25,9 @@ export const toleranceService = {
   async getToleranceById(id) {
     try {
       const response = await apiClient.get(`/tolerancias/${id}`);
-      return response.data;
+      return { success: true, data: response.data };
     } catch (error) {
-      console.error('Error al obtener tolerancia:', error);
-      throw this.handleError(error);
+      return handleApiError(error);
     }
   },
 
@@ -79,10 +39,9 @@ export const toleranceService = {
   async createTolerance(toleranceData) {
     try {
       const response = await apiClient.post('/tolerancias', toleranceData);
-      return response.data;
+      return { success: true, data: response.data };
     } catch (error) {
-      console.error('Error al crear tolerancia:', error);
-      throw this.handleError(error);
+      return handleApiError(error);
     }
   },
 
@@ -95,10 +54,9 @@ export const toleranceService = {
   async updateTolerance(id, toleranceData) {
     try {
       const response = await apiClient.put(`/tolerancias/${id}`, toleranceData);
-      return response.data;
+      return { success: true, data: response.data };
     } catch (error) {
-      console.error('Error al actualizar tolerancia:', error);
-      throw this.handleError(error);
+      return handleApiError(error);
     }
   },
 
@@ -110,10 +68,9 @@ export const toleranceService = {
   async deleteTolerance(id) {
     try {
       const response = await apiClient.delete(`/tolerancias/${id}`);
-      return response.data;
+      return { success: true, data: response.data };
     } catch (error) {
-      console.error('Error al eliminar tolerancia:', error);
-      throw this.handleError(error);
+      return handleApiError(error);
     }
   },
 
@@ -127,74 +84,24 @@ export const toleranceService = {
   async searchTolerances(query, page = 1, perPage = 15) {
     try {
       const response = await apiClient.get(`/tolerancias/search?q=${encodeURIComponent(query)}&page=${page}&per_page=${perPage}`);
-      return response.data;
+      return normalizePaginationResponse(response, page, perPage);
     } catch (error) {
-      console.error('Error al buscar tolerancias:', error);
-      throw this.handleError(error);
+      return handleApiError(error);
+    }
+  },
+    /**
+   * Obtener tolerancia por empresa
+   * @param {number} id_empresa - ID de la empresa
+   * @returns {Promise} Respuesta de la API
+   */
+  async getToleranceByEmpresa(id_empresa) {
+    try {
+      const response = await apiClient.get(`/tolerancias/by-empresa?id_empresa=${id_empresa}`);
+      return { success: true, data: response.data };
+    } catch (error) {
+      return handleApiError(error);
     }
   },
 
-  /**
-   * Manejo centralizado de errores
-   * @param {Object} error - Error de axios
-   * @returns {Object} Error formateado
-   */
-  handleError(error) {
-    if (error.response) {
-      // El servidor respondió con un código de estado de error
-      const { status, data } = error.response;
-      
-      switch (status) {
-        case 400:
-          return {
-            type: 'validation',
-            message: data.message || 'Datos inválidos',
-            errors: data.errors || {}
-          };
-        case 401:
-          return {
-            type: 'auth',
-            message: 'No autorizado. Por favor, inicia sesión nuevamente.'
-          };
-        case 403:
-          return {
-            type: 'forbidden',
-            message: 'No tienes permisos para realizar esta acción.'
-          };
-        case 404:
-          return {
-            type: 'not_found',
-            message: 'Tolerancia no encontrada.'
-          };
-        case 422:
-          return {
-            type: 'validation',
-            message: data.message || 'Errores de validación',
-            errors: data.errors || {}
-          };
-        case 500:
-          return {
-            type: 'server',
-            message: 'Error interno del servidor. Inténtalo más tarde.'
-          };
-        default:
-          return {
-            type: 'unknown',
-            message: data.message || 'Ha ocurrido un error inesperado.'
-          };
-      }
-    } else if (error.request) {
-      // La petición se hizo pero no hubo respuesta
-      return {
-        type: 'network',
-        message: 'Error de conexión. Verifica tu conexión a internet.'
-      };
-    } else {
-      // Algo pasó al configurar la petición
-      return {
-        type: 'unknown',
-        message: error.message || 'Error desconocido'
-      };
-    }
-  }
+  // ...eliminada función handleError, ahora se usa handleApiError global
 };
