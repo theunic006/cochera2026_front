@@ -101,35 +101,141 @@ const SalidasList = () => {
       dataIndex: ['registro', 'vehiculo', 'placa'],
       key: 'placa',
       render: (text, record) => {
-        return record.registro?.vehiculo?.placa || record.placa || '-';
+        const placa = record.registro?.vehiculo?.placa || record.placa || '-';
+        return <span style={{ color: '#3ec6ff', fontWeight: 600 }}>{placa}</span>;
+      },
+      filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters }) => (
+        <div style={{ padding: 8 }}>
+          <input
+            placeholder="Buscar placa"
+            value={selectedKeys[0] || ''}
+            onChange={e => setSelectedKeys(e.target.value ? [e.target.value] : [])}
+            onPressEnter={confirm}
+            style={{ width: 188, marginBottom: 8, display: 'block' }}
+          />
+          <button onClick={confirm} style={{ marginRight: 8 }}>Buscar</button>
+          <button onClick={clearFilters}>Limpiar</button>
+        </div>
+      ),
+      onFilter: (value, record) => {
+        const placa = record.registro?.vehiculo?.placa || record.placa || '';
+        return placa.toLowerCase().includes(value.toLowerCase());
       },
     },
     {
       title: 'Fecha Salida',
       dataIndex: 'fecha_salida',
       key: 'fecha_salida',
+      filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters }) => (
+        <div style={{ padding: 8 }}>
+          <input
+            placeholder="Buscar fecha"
+            value={selectedKeys[0] || ''}
+            onChange={e => setSelectedKeys(e.target.value ? [e.target.value] : [])}
+            onPressEnter={confirm}
+            style={{ width: 188, marginBottom: 8, display: 'block' }}
+          />
+          <button onClick={confirm} style={{ marginRight: 8 }}>Buscar</button>
+          <button onClick={clearFilters}>Limpiar</button>
+        </div>
+      ),
+      onFilter: (value, record) => (record.fecha_salida || '').toLowerCase().includes(value.toLowerCase()),
     },
     {
       title: 'Hora Salida',
       dataIndex: 'hora_salida',
       key: 'hora_salida',
+      filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters }) => (
+        <div style={{ padding: 8 }}>
+          <input
+            placeholder="Buscar hora"
+            value={selectedKeys[0] || ''}
+            onChange={e => setSelectedKeys(e.target.value ? [e.target.value] : [])}
+            onPressEnter={confirm}
+            style={{ width: 188, marginBottom: 8, display: 'block' }}
+          />
+          <button onClick={confirm} style={{ marginRight: 8 }}>Buscar</button>
+          <button onClick={clearFilters}>Limpiar</button>
+        </div>
+      ),
+      onFilter: (value, record) => (record.hora_salida || '').toLowerCase().includes(value.toLowerCase()),
     },
     {
       title: 'Precio',
       dataIndex: 'precio',
       key: 'precio',
       render: (precio) => `S/ ${precio || 0}.00`,
+      filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters }) => (
+        <div style={{ padding: 8 }}>
+          <input
+            placeholder="Buscar precio"
+            value={selectedKeys[0] || ''}
+            onChange={e => setSelectedKeys(e.target.value ? [e.target.value] : [])}
+            onPressEnter={confirm}
+            style={{ width: 188, marginBottom: 8, display: 'block' }}
+          />
+          <button onClick={confirm} style={{ marginRight: 8 }}>Buscar</button>
+          <button onClick={clearFilters}>Limpiar</button>
+        </div>
+      ),
+      onFilter: (value, record) => String(record.precio || '').toLowerCase().includes(value.toLowerCase()),
     },
     {
       title: 'Tipo Pago',
       dataIndex: 'tipo_pago',
       key: 'tipo_pago',
+      render: (tipo) => {
+        let color = '#aaa';
+        let bg = '';
+        if (tipo === 'YAPE') {
+          color = '#722ed1';
+          bg = 'rgba(114,46,209,0.08)';
+        } else if (tipo === 'EFECTIVO') {
+          color = '#52c41a';
+          bg = 'rgba(82,196,26,0.08)';
+        }
+        return <span style={{ color, background: bg, padding: '2px 10px', borderRadius: 6, fontWeight: 600 }}>{tipo || '-'}</span>;
+      },
+      filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters }) => (
+        <div style={{ padding: 8 }}>
+          <input
+            placeholder="Buscar tipo pago"
+            value={selectedKeys[0] || ''}
+            onChange={e => setSelectedKeys(e.target.value ? [e.target.value] : [])}
+            onPressEnter={confirm}
+            style={{ width: 188, marginBottom: 8, display: 'block' }}
+          />
+          <button onClick={confirm} style={{ marginRight: 8 }}>Buscar</button>
+          <button onClick={clearFilters}>Limpiar</button>
+        </div>
+      ),
+      onFilter: (value, record) => (record.tipo_pago || '').toLowerCase().includes(value.toLowerCase()),
     },
     {
       title: 'Usuario',
       dataIndex: ['user', 'name'],
       key: 'usuario',
-      render: (text, record) => record.user?.name || record.user || '-',
+      render: (text, record) => {
+        const usuario = record.user?.name || record.user || '-';
+        return <span style={{ color: '#1890ff', fontWeight: 600 }}>{usuario}</span>;
+      },
+      filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters }) => (
+        <div style={{ padding: 8 }}>
+          <input
+            placeholder="Buscar usuario"
+            value={selectedKeys[0] || ''}
+            onChange={e => setSelectedKeys(e.target.value ? [e.target.value] : [])}
+            onPressEnter={confirm}
+            style={{ width: 188, marginBottom: 8, display: 'block' }}
+          />
+          <button onClick={confirm} style={{ marginRight: 8 }}>Buscar</button>
+          <button onClick={clearFilters}>Limpiar</button>
+        </div>
+      ),
+      onFilter: (value, record) => {
+        const usuario = record.user?.name || record.user || '';
+        return usuario.toLowerCase().includes(value.toLowerCase());
+      },
     },
   ];
 

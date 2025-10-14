@@ -38,6 +38,7 @@ const PlacaInput = React.memo(({ value, onChange, onRegister, loading, disabled 
 ));
 
 const IngresoList = () => {
+  const [searchText, setSearchText] = useState("");
   const { user } = useAuth();
   const [toleranciaMinutos, setToleranciaMinutos] = useState(null);
   const [tiposVehiculo, setTiposVehiculo] = useState([]);
@@ -63,16 +64,23 @@ const IngresoList = () => {
   const [ingresoTerminar, setIngresoTerminar] = useState(null);
 
   // Función para cargar ingresos
-  const cargarIngresos = useCallback(async (page = 1, pageSize = 15) => {
+  const cargarIngresos = useCallback(async (page = 1, pageSize = 15, search = "") => {
     setLoading(true);
     try {
-      const response = await ingresoService.getIngresos(page, pageSize);
+      let response;
+      if (search.trim()) {
+        // Para búsqueda, traer hasta 1000 resultados sin paginación
+        response = await ingresoService.getIngresos(1, 1000, { search: search.trim() });
+      } else {
+        // Para navegación normal, usar paginación
+        response = await ingresoService.getIngresos(page, pageSize);
+      }
       if (response.success) {
         setIngresos(response.data);
         setPagination(prev => ({
           ...prev,
-          current: response.pagination?.current_page || page,
-          pageSize: response.pagination?.per_page || pageSize,
+          current: search.trim() ? 1 : (response.pagination?.current_page || page),
+          pageSize: search.trim() ? response.data.length : (response.pagination?.per_page || pageSize),
           total: response.pagination?.total || response.data.length,
         }));
       } else {
@@ -121,8 +129,8 @@ const IngresoList = () => {
   }, [user]);
 
   useEffect(() => {
-    cargarIngresos();
-  }, [cargarIngresos]);
+    cargarIngresos(1, 15, searchText);
+  }, [cargarIngresos, searchText]);
 
   // Función optimizada para manejar cambios en la placa
   const handlePlacaChange = useCallback((e) => {
@@ -149,34 +157,54 @@ const IngresoList = () => {
         return;
       }
 
-      // Verificar si la placa ya está registrada en ingresos activos
-      const placaExiste = ingresos.some(
-        i => i.vehiculo?.placa?.toUpperCase() === placaLimpia
-      );
-      if (placaExiste) {
-        message.success('Vehículo en cochera');
-        setRegistrando(false);
-        return;
-      }
-      // Aquí deberías llamar a la API para registrar el ingreso
+      // Eliminar la verificación local - el backend maneja toda la lógica
+      // El backend verificará si existe en toda la base de datos, no solo en los 15 visibles
+      
+      // Llamar a la API para registrar el ingreso
       const response = await vehiculoService.createVehiculo({ placa: placaLimpia });
+
       if (response.success) {
-        message.success('Ingreso correctamente');
+        // Mostrar el comentario del backend si existe
+        const comentario = response.comentario || '';
+        const mensaje = response.message || 'Ingreso procesado correctamente';
+        
+        // Mostrar el comentario detallado del backend
+        if (comentario) {
+          // Determinar el tipo de mensaje basado en el comentario
+          if (comentario.includes('Ya existe ingreso')) {
+            message.warning(`${mensaje}. ${comentario}`, 4);
+          } else if (comentario.includes('No existe placa')) {
+            message.success(`${mensaje}. ${comentario}`, 4);
+          } else if (comentario.includes('Existe placa')) {
+            message.info(`${mensaje}. ${comentario}`, 4);
+          } else {
+            message.success(`${mensaje}. ${comentario}`, 4);
+          }
+        } else {
+          message.success(mensaje);
+        }
+        
         setNuevaPlaca("");
-        cargarIngresos();
+        cargarIngresos(1, 15, searchText);
       } else {
-        message.error(response.message || 'Error al registrar ingreso');
+        const errorMsg = response.message || 'Error al registrar ingreso';
+        const comentario = response.comentario || '';
+        const mensajeCompleto = comentario ? `${errorMsg}. ${comentario}` : errorMsg;
+        message.error(mensajeCompleto);
       }
     } catch (error) {
       message.error(error.message || 'Error al registrar ingreso');
     } finally {
       setRegistrando(false);
     }
-  }, [nuevaPlaca, ingresos, cleanPlacaForSubmit, cargarIngresos]);
+  }, [nuevaPlaca, cleanPlacaForSubmit, cargarIngresos, searchText]);
 
   const handleTableChange = useCallback((newPagination) => {
-    cargarIngresos(newPagination.current, newPagination.pageSize);
-  }, [cargarIngresos]);
+    // Solo permitir paginación cuando NO hay búsqueda activa
+    if (!searchText.trim()) {
+      cargarIngresos(newPagination.current, newPagination.pageSize, "");
+    }
+  }, [cargarIngresos, searchText]);
 
   const handleTerminar = useCallback(async (ingreso) => {
     // Refrescar datos del ingreso desde el backend antes de mostrar el modal
@@ -195,8 +223,8 @@ const IngresoList = () => {
 
   // Función memoizada para recargar datos
   const handleReload = useCallback(() => {
-    cargarIngresos(pagination.current, pagination.pageSize);
-  }, [cargarIngresos, pagination.current, pagination.pageSize]);
+    cargarIngresos(pagination.current, pagination.pageSize, searchText);
+  }, [cargarIngresos, pagination.current, pagination.pageSize, searchText]);
 
   // Función optimizada para editar ingreso
   const handleEditIngreso = useCallback((record) => {
@@ -213,15 +241,41 @@ const IngresoList = () => {
       key: 'placa',
       render: (_, record) =>
         record.vehiculo?.placa ? (
-          <Button
-            className="placa-btn-responsive"
-            color='primary'
-            variant='outlined'
-            type="link"
-            onClick={() => handleEditIngreso(record)}
-          >
-            {record.vehiculo.placa}
-          </Button>
+          (() => {
+            // Buscar la observación más reciente (o relevante)
+            const obs = Array.isArray(record.vehiculo?.observaciones) && record.vehiculo.observaciones.length > 0
+              ? record.vehiculo.observaciones[record.vehiculo.observaciones.length - 1]
+              : null;
+            // Asignar clase según tipo de observación
+            let obsClass = '';
+            if (obs) {
+              switch ((obs.tipo || '').toLowerCase()) {
+                case 'leve':
+                  obsClass = 'obs-opcion-leve'; break;
+                case 'grave':
+                  obsClass = 'obs-opcion-grave'; break;
+                case 'advertencia':
+                  obsClass = 'obs-opcion-advertencia'; break;
+                case 'información':
+                  obsClass = 'obs-opcion-info'; break;
+                case 'otro':
+                  obsClass = 'obs-opcion-otro'; break;
+                default:
+                  obsClass = 'obs-opcion-ninguno'; break;
+              }
+            }
+            return (
+              <Button
+                className={`placa-btn-responsive ${obsClass}`}
+                color='primary'
+                variant='outlined'
+                type="link"
+                onClick={() => handleEditIngreso(record)}
+              >
+                {record.vehiculo.placa}
+              </Button>
+            );
+          })()
         ) : (
           <span style={{ color: '#aaa' }}>Sin placa</span>
         ),
@@ -314,7 +368,7 @@ const IngresoList = () => {
               setModalVisible(false);
               setIngresoEdit(null);
               setPlacaEdit("");
-              cargarIngresos();
+              cargarIngresos(1, 15, searchText);
             } else {
               message.error(response.message || 'Error al actualizar ingreso');
             }
@@ -351,12 +405,12 @@ const IngresoList = () => {
         onPagoEfectivo={() => {
           setTerminarModalVisible(false);
           message.success('Pago registrado: Efectivo');
-          cargarIngresos();
+          cargarIngresos(1, 15, searchText);
         }}
         onPagoYape={() => {
           setTerminarModalVisible(false);
           message.success('Pago registrado: Yape');
-          cargarIngresos();
+          cargarIngresos(1, 15, searchText);
         }}
       />
       <div>
@@ -378,14 +432,17 @@ const IngresoList = () => {
           columns={columns}
           dataSource={ingresos}
           loading={loading}
-          pagination={pagination}
+          pagination={searchText.trim() ? false : pagination}
           onTableChange={handleTableChange}
           onReload={handleReload}
           searchPlaceholder="Buscar por placa..."
-          searchFilterPath="vehiculo.placa"
+          searchFilterPath={null}
           title="Lista de Ingresos"
           statsTitle="Total Ingresos"
           statsIcon={<CarOutlined />}
+          showSearch={true}
+          searchText={searchText}
+          setSearchText={setSearchText}
         />
       </div>
     </AppLayout>

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import { printTicketQZ } from "../../utils/printTicket";
+import { useAuthInfo } from '../../hooks/useAuthInfo';
 import { Modal, Form, Input, Button, Space, Select, message } from "antd";
 import "./EditarForm.css";
 import { CarOutlined } from "@ant-design/icons";
@@ -13,6 +13,7 @@ const EditarForm = ({
   ingresoEdit,
   tiposVehiculo,
 }) => {
+  const { userInfo } = useAuthInfo();
   const [form] = Form.useForm();
   const ticketRef = useRef(null);
 
@@ -39,15 +40,20 @@ const EditarForm = ({
 
   // Imprimir ticket usando QZ Tray (función separada)
   const handlePrintTicket = async () => {
-    const placa = ingresoEdit?.vehiculo?.placa || "";
-    const fecha = ingresoEdit?.fecha_ingreso || "";
-    const hora = ingresoEdit?.hora_ingreso || "";
-    let tipoVehiculo = "";
-    if (Array.isArray(tiposVehiculo) && ingresoEdit?.vehiculo?.tipo_vehiculo_id) {
-      const tv = tiposVehiculo.find(tv => tv.id === ingresoEdit.vehiculo.tipo_vehiculo_id);
-      tipoVehiculo = tv ? tv.nombre : "";
+    if (!ingresoEdit?.id) {
+      message.error("No se encontró el ingreso para imprimir");
+      return;
     }
-    await printTicketQZ({ placa, fecha, hora, tipoVehiculo });
+    try {
+      const response = await ingresoService.printIngreso(ingresoEdit.id);
+      if (response.success) {
+        message.success("Ticket enviado a la impresora correctamente");
+      } else {
+        message.error(response.message || "Error al imprimir el ticket");
+      }
+    } catch (err) {
+      message.error("Error al imprimir: " + err);
+    }
   };
 
   const handleFinish = async (values) => {
@@ -110,6 +116,12 @@ const EditarForm = ({
           >
             Imprimir Ticket
           </Button>
+          {/* Mostrar nombre de impresora de la empresa */}
+          {userInfo?.empresa?.data?.imp_input && (
+            <span style={{ color: "#722ed1", fontWeight: 500, fontSize: 16 }}>
+              Impresora: {userInfo.empresa.data.imp_input}
+            </span>
+          )}
           {ingresoEdit?.user?.name && (
             <span style={{ color: "#fff", fontWeight: 500, fontSize: 16 }}>
               <span style={{ opacity: 0.7, marginRight: 4 }}>Usuario:</span>{" "}
@@ -191,12 +203,24 @@ const EditarForm = ({
           <label className="form-label">Tipo Observación:</label>
           <Form.Item name="tipo_observacion" className="form-item-inline" initialValue="Ninguno">
             <Select>
-              <Select.Option value="Ninguno">Ninguno</Select.Option>
-              <Select.Option value="Leve">Leve</Select.Option>
-              <Select.Option value="Grave">Grave</Select.Option>
-              <Select.Option value="Advertencia">Advertencia</Select.Option>
-              <Select.Option value="Información">Información</Select.Option>
-              <Select.Option value="Otro">Otro</Select.Option>
+              <Select.Option value="Ninguno">
+                <span className="obs-opcion-ninguno">Ninguno</span>
+              </Select.Option>
+              <Select.Option value="Leve">
+                <span className="obs-opcion-leve">Leve</span>
+              </Select.Option>
+              <Select.Option value="Grave">
+                <span className="obs-opcion-grave">Grave</span>
+              </Select.Option>
+              <Select.Option value="Advertencia">
+                <span className="obs-opcion-advertencia">Advertencia</span>
+              </Select.Option>
+              <Select.Option value="Información">
+                <span className="obs-opcion-info">Información</span>
+              </Select.Option>
+              <Select.Option value="Otro">
+                <span className="obs-opcion-otro">Otro</span>
+              </Select.Option>
             </Select>
           </Form.Item>
         </div>

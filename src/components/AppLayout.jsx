@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Layout, Menu, Button, Avatar, Dropdown, Space, Typography, Badge, Switch, Drawer } from 'antd';
+import { STORAGE_BASE_URL } from '../utils/apiClient';
 import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
@@ -111,34 +112,10 @@ const AppLayout = ({ children }) => {
       onClick: () => handleMobileNavigation('/vehiculos'),
     },
     {
-      key: '/propietarios',
-      icon: <UserOutlined />,
-      label: 'Propietarios',
-      onClick: () => handleMobileNavigation('/propietarios'),
-    },
-    {
       key: '/reportes',
       icon: <BarChartOutlined />,
       label: 'Reportes',
       onClick: () => handleMobileNavigation('/reportes'),
-    },
-    {
-      key: '/pagos',
-      icon: <CreditCardOutlined />,
-      label: 'Pagos',
-      onClick: () => handleMobileNavigation('/pagos'),
-    },
-    {
-      key: '/seguridad',
-      icon: <SecurityScanOutlined />,
-      label: 'Seguridad',
-      onClick: () => handleMobileNavigation('/seguridad'),
-    },
-    {
-      key: '/configuracion',
-      icon: <SettingOutlined />,
-      label: 'Configuración',
-      onClick: () => handleMobileNavigation('/configuracion'),
     },
     {
       key: '/salidas',
@@ -155,7 +132,7 @@ const AppLayout = ({ children }) => {
   ];
   // Solo SUPERUSUARIO (idrol === 1) puede ver 'Empresas'
   if (userInfo?.idrol === 1) {
-    menuItems.splice(5, 0, {
+    menuItems.splice(11, 0, {
       key: '/empresas',
       icon: <BankOutlined />,
       label: 'Empresas',
@@ -170,12 +147,6 @@ const AppLayout = ({ children }) => {
       icon: <UserOutlined />,
       label: 'Mi Perfil',
       onClick: () => navigate('/perfil'),
-    },
-    {
-      key: 'settings',
-      icon: <SettingOutlined />,
-      label: 'Configuración',
-      onClick: () => navigate('/configuracion'),
     },
     {
       type: 'divider',
@@ -247,7 +218,7 @@ const AppLayout = ({ children }) => {
         </div>
 
         {/* Logo de empresa arriba del menú, solo en desktop */}
-        {companyLogo && !isMobile && (
+        {!isMobile && (
           <div
             style={{
               width: '100%',
@@ -257,17 +228,17 @@ const AppLayout = ({ children }) => {
             }}
           >
             <img
-              src={`http://127.0.0.1:8000/storage/${userInfo.empresa.data.logo}`}
+              src={companyLogo ? `${STORAGE_BASE_URL}/companies/${userInfo.empresa.data.logo}` : `${STORAGE_BASE_URL}/companies/garage.png`}
               alt="Logo empresa"
+
               style={{
                 width: '80%',
                 maxWidth: 120,
                 maxHeight: 60,
                 objectFit: 'contain',
                 borderRadius: 8,
-                background: '#fff',
                 border: '1px solid #eee',
-                boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+                boxShadow: '0 1px 4px rgba(0, 0, 0, 0)',
                 display: 'block',
                 margin: '0 auto',
               }}

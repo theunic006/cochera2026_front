@@ -44,9 +44,14 @@ const TableBase = ({
   statsIcon = null,
   rowKey = "id",
   scroll = { x: 900 },
+  searchText, // Prop externa para controlar el texto de búsqueda
+  setSearchText, // Prop externa para actualizar el texto de búsqueda
   ...tableProps
 }) => {
-  const [searchText, setSearchText] = useState("");
+  // Permitir control externo del estado de búsqueda
+  const [internalSearchText, setInternalSearchText] = useState("");
+  const searchValue = typeof searchText === 'string' ? searchText : internalSearchText;
+  const setSearchValue = typeof setSearchText === 'function' ? setSearchText : setInternalSearchText;
 
   // Función para obtener valor anidado del objeto
   const getNestedValue = (obj, path) => {
@@ -54,24 +59,8 @@ const TableBase = ({
   };
 
   // Filtrar datos según el texto de búsqueda
-  const filteredData = searchText.trim()
-    ? dataSource.filter(item => {
-        // Si hay un filtro personalizado, usarlo
-        if (customSearchFilter) {
-          return customSearchFilter(item, searchText.trim());
-        }
-        
-        // Si no, usar la lógica original
-        if (searchFilterPath || searchFilterKey) {
-          const value = searchFilterPath 
-            ? getNestedValue(item, searchFilterPath)
-            : item[searchFilterKey];
-          return value?.toString().toUpperCase().includes(searchText.trim().toUpperCase());
-        }
-        
-        return true;
-      })
-    : dataSource;
+  // Ya no filtramos localmente, solo mostramos lo que llega
+  const filteredData = dataSource;
 
   // Configuración por defecto de paginación
   const defaultPagination = {
@@ -129,8 +118,8 @@ const TableBase = ({
               <Input
                 type="text"
                 placeholder={searchPlaceholder}
-                value={searchText}
-                onChange={e => setSearchText(e.target.value.toUpperCase())}
+                value={searchValue}
+                onChange={e => setSearchValue(e.target.value.toUpperCase())}
                 style={{ width: 200, textTransform: 'uppercase' }}
                 maxLength={50}
                 autoComplete="off"

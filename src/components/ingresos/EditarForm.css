@@ -1,3 +1,50 @@
+.placa-btn-responsive.obs-opcion-leve {
+
+  color: #52c41a !important;
+  border-color: #52c41a !important;
+}
+.placa-btn-responsive.obs-opcion-grave {
+
+  color: #ff4d4f !important;
+  border-color: #ff4d4f !important;
+  font-weight: bold;
+}
+.placa-btn-responsive.obs-opcion-advertencia {
+
+  color: #faad14 !important;
+  border-color: #faad14 !important;
+  font-weight: bold;
+}
+.placa-btn-responsive.obs-opcion-info {
+
+  color: #1890ff !important;
+  border-color: #1890ff !important;
+}
+.placa-btn-responsive.obs-opcion-otro {
+
+  color: #722ed1 !important;
+  border-color: #722ed1 !important;
+}
+.obs-opcion-ninguno {
+  color: #888;
+}
+.obs-opcion-leve {
+  color: #52c41a;
+}
+.obs-opcion-grave {
+  color: #ff4d4f;
+  font-weight: bold;
+}
+.obs-opcion-advertencia {
+  color: #faad14;
+  font-weight: bold;
+}
+.obs-opcion-info {
+  color: #1890ff;
+}
+.obs-opcion-otro {
+  color: #722ed1;
+}
 /* Panel de observaciones en EditarForm */
 .observaciones-panel {
   margin: 12px 0 18px 0;

@@ -3,6 +3,7 @@ import { userService } from "../../services/userService";
 import printerService from "../../services/printerService";
 import ConfigImpresora from "./ConfigImpresora";
 import UserForm from "../users/UserForm";
+import { STORAGE_BASE_URL } from '../../utils/apiClient';
 
 import { 
   Card, 
@@ -475,7 +476,7 @@ const PerfilUsuario = () => {
                       <Col xs={24} md={8} style={{ textAlign: 'center' }}>
                         {company.logo && (
                           <img
-                            src={`http://127.0.0.1:8000/storage/${company.logo}`}
+                            src={`${STORAGE_BASE_URL}/companies/${company.logo}`}
                             alt="Logo empresa"
                             style={{
                               width: 120,

@@ -1,12 +1,19 @@
 import { Typography, Card, Row, Col, Statistic, Progress, Spin } from 'antd';
 import { CarOutlined, TeamOutlined, ClockCircleOutlined } from '@ant-design/icons';
+import { useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import AppLayout from './AppLayout';
+import { useAuth } from '../context/AuthContext';
 import { useAuthInfo } from '../hooks/useAuthInfo';
+import { STORAGE_BASE_URL } from '../utils/apiClient';
 
 const { Title, Text } = Typography;
 
 const Dashboard = () => {
+  const { user, loading: authLoading } = useAuth();
   const { userInfo, empresaLoading } = useAuthInfo();
+  const navigate = useNavigate();
+  const hasRedirected = useRef(false);
 
   // Datos simulados para las estadísticas
   const stats = {
@@ -17,11 +24,31 @@ const Dashboard = () => {
   };
   const ocupacionPorcentaje = Math.round((stats.espaciosOcupados / stats.totalVehiculos) * 100);
 
-  if (!userInfo) {
+  // Redirigir al login si no hay usuario autenticado (solo una vez)
+  useEffect(() => {
+    if (!authLoading && !user && !hasRedirected.current) {
+      hasRedirected.current = true;
+      navigate('/login');
+    }
+  }, [user, authLoading, navigate]);
+
+  // Mostrar loading mientras se verifica la autenticación
+  if (authLoading || !user) {
     return (
       <AppLayout>
-        <div style={{ padding: 32, textAlign: 'center' }}>
-          <Title level={3}>No estás autenticado</Title>
+        <div style={{ 
+          padding: 64, 
+          textAlign: 'center',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '50vh'
+        }}>
+          <Spin size="large" />
+          <Title level={4} style={{ marginTop: 16, color: '#666' }}>
+            {authLoading ? 'Cargando...' : 'Verificando autenticación...'}
+          </Title>
         </div>
       </AppLayout>
     );
@@ -65,7 +92,7 @@ const Dashboard = () => {
                   {userInfo.empresa.data.logo && (
                     <div style={{ textAlign: 'center', marginBottom: 8 }}>
                       <img
-                        src={`http://127.0.0.1:8000/storage/${userInfo.empresa.data.logo}`}
+                       src={`${STORAGE_BASE_URL}/companies/${userInfo.empresa.data.logo}`}
                         alt="Logo empresa"
                         style={{
                           width: 64,

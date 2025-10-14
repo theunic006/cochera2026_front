@@ -22,8 +22,11 @@ const ObservacionesList = () => {
     try {
       const response = await observacionService.getObservaciones();
       if (response.success) {
-        setObservaciones(response.data);
+        // Asegurar que los datos sean un array
+        const data = Array.isArray(response.data) ? response.data : [];
+        setObservaciones(data);
       } else {
+        setObservaciones([]); // Evitar pasar undefined
         setError('Error al cargar observaciones');
       }
     } catch (err) {
@@ -61,6 +64,24 @@ const ObservacionesList = () => {
       title: 'Tipo',
       dataIndex: 'tipo',
       key: 'tipo',
+      render: (tipo) => {
+        let obsClass = '';
+        switch ((tipo || '').toLowerCase()) {
+          case 'leve':
+            obsClass = 'obs-opcion-leve'; break;
+          case 'grave':
+            obsClass = 'obs-opcion-grave'; break;
+          case 'advertencia':
+            obsClass = 'obs-opcion-advertencia'; break;
+          case 'información':
+            obsClass = 'obs-opcion-info'; break;
+          case 'otro':
+            obsClass = 'obs-opcion-otro'; break;
+          default:
+            obsClass = 'obs-opcion-ninguno'; break;
+        }
+        return <span className={obsClass} style={{ padding: '2px 10px', borderRadius: 6 }}>{tipo || '-'}</span>;
+      }
     },
     {
       title: 'Descripción',
@@ -71,7 +92,12 @@ const ObservacionesList = () => {
       title: 'Vehículo (Placa)',
       dataIndex: ['vehiculo', 'placa'],
       key: 'placa',
-      render: (_, record) => record.vehiculo?.placa || '-',
+      render: (_, record) => {
+        const placa = record.vehiculo?.placa;
+        return placa
+          ? <span className="placa-celeste" style={{ color: '#505aecff', fontWeight: 600 }}>{placa}</span>
+          : '-';
+      },
     },
     {
       title: 'Frecuencia',

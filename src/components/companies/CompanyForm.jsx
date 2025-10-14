@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+
 import { 
   Modal, 
   Form, 
@@ -16,6 +17,7 @@ import {
 } from 'antd';
 import { BankOutlined, EnvironmentOutlined, FileTextOutlined, SafetyCertificateOutlined, UploadOutlined, InboxOutlined } from '@ant-design/icons';
 import { companyService } from '../../services/companyService';
+import { STORAGE_BASE_URL } from '../../utils/apiClient';
 const { TextArea } = Input;
 const CompanyForm = ({ visible, onCancel, onSuccess, editingCompany = null }) => {
   const [form] = Form.useForm();
@@ -45,7 +47,7 @@ const CompanyForm = ({ visible, onCancel, onSuccess, editingCompany = null }) =>
           setLogoPreview(
             isAbsolute
               ? editingCompany.logo
-              : `http://127.0.0.1:8000/storage/${editingCompany.logo}`
+              : `${STORAGE_BASE_URL}/companies/${editingCompany.logo}`
           );
         } else {
           setLogoPreview(null);
@@ -115,6 +117,18 @@ const CompanyForm = ({ visible, onCancel, onSuccess, editingCompany = null }) =>
       if (logoFile) {
         formData.append('logo', logoFile);
       }
+
+      // Log para depuración
+      console.log('Valores enviados al crear/editar empresa:', {
+        nombre: values.nombre,
+        ubicacion: values.ubicacion,
+        descripcion: values.descripcion,
+        estado: values.estado,
+        capacidad: values.capacidad,
+        logoFile,
+        isEditing,
+        id: editingCompany?.id
+      });
 
       if (isEditing) {
         response = await companyService.updateCompany(editingCompany.id, formData, true);

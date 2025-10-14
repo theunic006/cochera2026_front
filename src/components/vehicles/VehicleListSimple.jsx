@@ -32,6 +32,7 @@ const { Title } = Typography;
 
 const VehicleListSimple = () => {
   const [vehicles, setVehicles] = useState([]);
+  const [filteredVehicles, setFilteredVehicles] = useState([]);
   const [loading, setLoading] = useState(false);
   const [formVisible, setFormVisible] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState(null);
@@ -391,19 +392,8 @@ const VehicleListSimple = () => {
           searchPlaceholder="Buscar por placa, marca, modelo, color o tipo..."
           title="Lista de Vehículos"
           onReload={loadVehicles}
-          extraActions={
-            <Button 
-              type="primary" 
-              icon={<PlusOutlined />}
-              onClick={handleCreate}
-              style={{ 
-                backgroundColor: '#722ed1',
-                borderColor: '#722ed1'
-              }}
-            >
-              Nuevo Vehículo
-            </Button>
-          }
+          // extraActions eliminado para ocultar el botón 'Nuevo Vehículo'
+          extraActions={null}
         />
 
         {/* Modal del formulario */}

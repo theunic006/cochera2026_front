@@ -2,9 +2,33 @@ import apiClient from '../utils/apiClient';
 import { handleApiError, normalizePaginationResponse } from '../utils/apiHelpers';
 
 export const ingresoService = {
-  async getIngresos(page = 1, perPage = 15) {
+  async searchIngresosByPlaca(placa) {
     try {
-      const response = await apiClient.get(`/ingresos?page=${page}&per_page=${perPage}`);
+      // Solicitar hasta 1000 resultados para búsqueda global
+      const response = await apiClient.get(`/ingresos?search=${encodeURIComponent(placa)}&per_page=1000`);
+      return normalizePaginationResponse(response, 1, response.data?.data?.length || 1000);
+    } catch (error) {
+      return handleApiError(error);
+    }
+  },
+  async printIngreso(id) {
+    try {
+      const response = await apiClient.get(`/ingresos/${id}/print`);
+      return { success: response.status === 200, data: response.data };
+    } catch (error) {
+      return handleApiError(error);
+    }
+  },
+  async getIngresos(page = 1, perPage = 15, filters = {}) {
+    try {
+      // Construir query string con filtros adicionales
+      let query = `?page=${page}&per_page=${perPage}`;
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== "") {
+          query += `&${encodeURIComponent(key)}=${encodeURIComponent(value)}`;
+        }
+      });
+      const response = await apiClient.get(`/ingresos${query}`);
       return normalizePaginationResponse(response, page, perPage);
     } catch (error) {
       return handleApiError(error);
