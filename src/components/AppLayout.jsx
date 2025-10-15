@@ -129,6 +129,18 @@ const AppLayout = ({ children }) => {
       label: 'Observaciones',
       onClick: () => handleMobileNavigation('/observaciones'),
     },
+    {
+      key: '/configuracion-impresora',
+      icon: <SettingOutlined />,
+      label: 'Configuración Impresora',
+      onClick: () => handleMobileNavigation('/configuracion-impresora'),
+    },
+    {
+      key: '/ventas-ejemplo',
+      icon: <FileTextOutlined />,
+      label: 'Ventas Ejemplo',
+      onClick: () => handleMobileNavigation('/ventas-ejemplo'),
+    }
   ];
   // Solo SUPERUSUARIO (idrol === 1) puede ver 'Empresas'
   if (userInfo?.idrol === 1) {
@@ -228,7 +240,7 @@ const AppLayout = ({ children }) => {
             }}
           >
             <img
-              src={companyLogo ? `${STORAGE_BASE_URL}/companies/${userInfo.empresa.data.logo}` : `${STORAGE_BASE_URL}/companies/garage.png`}
+              src={companyLogo ? `${STORAGE_BASE_URL}/${userInfo.empresa.data.logo}` : `${STORAGE_BASE_URL}/garage.png`}
               alt="Logo empresa"
 
               style={{

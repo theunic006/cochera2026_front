@@ -5,6 +5,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import Login from './components/Login';
+import Register from './components/Register';
 import Dashboard from './components/Dashboard';
 import PerfilUsuario from './components/perfil/PerfilUsuario';
 import UserList from './components/users/UserList';
@@ -20,6 +21,10 @@ import RegistroList from './components/registros/RegistroList';
 import IngresoList from './components/ingresos/IngresoList';
 import SalidasList from './components/salidas/SalidasList';
 import { ObservacionesList } from './components/observaciones';
+
+import PluginPrinterConfig from './components/PluginPrinterConfig';
+import VentasExample from './components/VentasExample';
+
 import "./App.css";
 
 // Componente para manejar la redirección inicial
@@ -47,6 +52,10 @@ const AppRouter = () => {
       <Route 
         path="/login" 
         element={isAuthenticated() ? <Navigate to="/dashboard" replace /> : <Login />} 
+      />
+      <Route 
+        path="/register" 
+        element={isAuthenticated() ? <Navigate to="/dashboard" replace /> : <Register />} 
       />
       <Route 
         path="/dashboard" 
@@ -152,6 +161,24 @@ const AppRouter = () => {
           </ProtectedRoute>
         } 
       />
+
+      <Route 
+        path="/configuracion-impresora" 
+         element={
+          <ProtectedRoute>
+            <PluginPrinterConfig />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/ventas-ejemplo" 
+         element={
+          <ProtectedRoute>
+            <VentasExample />
+          </ProtectedRoute>
+        } 
+      />
+
       {/* Rutas adicionales placeholder */}
       <Route 
         path="/pagos" 

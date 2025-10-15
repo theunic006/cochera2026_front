@@ -215,5 +215,25 @@ export const companyService = {
     }
   },
 
+  /**
+   * Registrar nueva empresa con usuario administrador (público, sin autenticación)
+   * @param {FormData} formData - Datos de la empresa y administrador
+   * @returns {Promise} Respuesta de la API
+   */
+  async registerCompany(formData) {
+    try {
+      // Usar axiosPublicInstance en lugar de apiClient para no requerir autenticación
+      const { axiosPublicInstance } = await import('../utils/axios');
+      const response = await axiosPublicInstance.post('/companies/register', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return { success: true, data: response.data };
+    } catch (error) {
+      return handleApiError(error);
+    }
+  },
+
   // ...eliminada función handleError, ahora se usa handleApiError global
 };

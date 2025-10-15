@@ -476,7 +476,7 @@ const PerfilUsuario = () => {
                       <Col xs={24} md={8} style={{ textAlign: 'center' }}>
                         {company.logo && (
                           <img
-                            src={`${STORAGE_BASE_URL}/companies/${company.logo}`}
+                            src={`${STORAGE_BASE_URL}/${company.logo}`}
                             alt="Logo empresa"
                             style={{
                               width: 120,

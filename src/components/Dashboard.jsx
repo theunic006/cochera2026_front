@@ -92,7 +92,7 @@ const Dashboard = () => {
                   {userInfo.empresa.data.logo && (
                     <div style={{ textAlign: 'center', marginBottom: 8 }}>
                       <img
-                       src={`${STORAGE_BASE_URL}/companies/${userInfo.empresa.data.logo}`}
+                       src={`${STORAGE_BASE_URL}/${userInfo.empresa.data.logo}`}
                         alt="Logo empresa"
                         style={{
                           width: 64,

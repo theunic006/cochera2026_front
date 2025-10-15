@@ -47,7 +47,7 @@ const CompanyForm = ({ visible, onCancel, onSuccess, editingCompany = null }) =>
           setLogoPreview(
             isAbsolute
               ? editingCompany.logo
-              : `${STORAGE_BASE_URL}/companies/${editingCompany.logo}`
+              : `${STORAGE_BASE_URL}/${editingCompany.logo}`
           );
         } else {
           setLogoPreview(null);

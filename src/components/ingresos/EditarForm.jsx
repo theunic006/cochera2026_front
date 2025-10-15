@@ -38,21 +38,106 @@ const EditarForm = ({
     form.setFieldsValue({ observaciones: descripcion });
   };
 
-  // Imprimir ticket usando QZ Tray (función separada)
+  // Verificar estado de QZ Tray
+  const handleCheckQZTray = async () => {
+    try {
+      message.loading("Verificando QZ Tray...", 0);
+      const status = await printService.checkQZTrayStatus();
+      message.destroy();
+      
+      if (status.available) {
+        message.success({
+          content: `✅ QZ Tray está funcionando correctamente. ${status.message}`,
+          duration: 4
+        });
+      } else {
+        message.warning({
+          content: `⚠️ ${status.message}`,
+          duration: 6
+        });
+      }
+    } catch (error) {
+      message.destroy();
+      message.error({
+        content: `Error verificando QZ Tray: ${error.message}`,
+        duration: 5
+      });
+    }
+  };
+
+  // Imprimir ticket usando QZ Tray
   const handlePrintTicket = async () => {
     if (!ingresoEdit?.id) {
       message.error("No se encontró el ingreso para imprimir");
       return;
     }
+    
     try {
-      const response = await ingresoService.printIngreso(ingresoEdit.id);
-      if (response.success) {
-        message.success("Ticket enviado a la impresora correctamente");
+      message.loading("Conectando con la impresora...", 0);
+      
+      // Conectar a QZ Tray
+      await printService.connect();
+      
+      // Obtener el tipo de vehículo seleccionado del formulario
+      const tipoVehiculoId = form.getFieldValue('tipo_vehiculo');
+      const tipoVehiculoSeleccionado = tiposVehiculo?.find(tv => tv.id === tipoVehiculoId);
+      
+      // Preparar datos para la plantilla del ticket
+      const ticketData = {
+        id: ingresoEdit.id,
+        placa: ingresoEdit.vehiculo?.placa || form.getFieldValue('placa') || 'No especificado',
+        fechaIngreso: ingresoEdit.fecha_ingreso || 'No especificado',
+        horaIngreso: ingresoEdit.hora_ingreso || 'No especificado',
+        tipoVehiculo: tipoVehiculoSeleccionado?.nombre || 'No especificado',
+        valorHoraFraccion: tipoVehiculoSeleccionado?.valor || 'No especificado'
+      };
+      
+      // Generar el contenido del ticket usando la plantilla
+      const ticketContent = TicketTemplate.generarTicketIngreso(ticketData);
+      
+      message.destroy();
+      
+      // Imprimir usando QZ Tray con printRaw
+      await printService.printRaw(ticketContent.join(''));
+      
+      message.success("Ticket enviado a la impresora correctamente");
+      
+    } catch (error) {
+      message.destroy();
+      console.error('Error al imprimir:', error);
+      
+      // Manejo de errores más específico
+      if (error.message.includes('QZ Tray no responde')) {
+        message.error({
+          content: "QZ Tray no responde. Reinicia QZ Tray desde la bandeja del sistema e inténtalo de nuevo.",
+          duration: 6
+        });
+      } else if (error.message.includes('QZ Tray no está corriendo')) {
+        message.error({
+          content: "QZ Tray no está corriendo. Inicia QZ Tray desde el menú de inicio o la bandeja del sistema.",
+          duration: 6
+        });
+      } else if (error.message.includes('QZ Tray perdió la conexión')) {
+        message.error({
+          content: "Se perdió la conexión con QZ Tray. Verifica que esté corriendo y vuelve a intentar.",
+          duration: 6
+        });
+      } else if (error.message.includes('impresoras disponibles')) {
+        message.error({
+          content: "No hay impresoras disponibles. Verifica que tu impresora esté conectada y encendida.",
+          duration: 6
+        });
+      } else if (error.message.includes('QZ Tray no está instalado')) {
+        message.error({
+          content: "QZ Tray no está instalado. Descárgalo desde https://qz.io/download/ e instálalo.",
+          duration: 8
+        });
       } else {
-        message.error(response.message || "Error al imprimir el ticket");
+        message.error({
+          content: `Error al imprimir: ${error.message}`,
+          duration: 5
+        });
       }
-    } catch (err) {
-      message.error("Error al imprimir: " + err);
     }
   };
 
@@ -115,6 +200,15 @@ const EditarForm = ({
             type="default"
           >
             Imprimir Ticket
+          </Button>
+          
+          <Button
+            size="small"
+            onClick={handleCheckQZTray}
+            type="dashed"
+            title="Verificar estado de QZ Tray"
+          >
+            🔍 QZ Tray
           </Button>
           {/* Mostrar nombre de impresora de la empresa */}
           {userInfo?.empresa?.data?.imp_input && (

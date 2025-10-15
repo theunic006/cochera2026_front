@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { Form, Input, Button, Card, Typography, message, Row, Col, Spin, Space, Divider } from 'antd';
-import { UserOutlined, LockOutlined, LoginOutlined, CarOutlined } from '@ant-design/icons';
+import { UserOutlined, LockOutlined, LoginOutlined, CarOutlined, SafetyOutlined } from '@ant-design/icons';
 import { axiosPublicInstance } from '../utils/axios';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 const { Title, Text } = Typography;
 
@@ -14,14 +14,47 @@ const Login = () => {
     const [loginError, setLoginError] = useState("");
   const { isDarkMode } = useTheme();
   const navigate = useNavigate();
+  
+  // Hook de reCAPTCHA opcional
+  let executeRecaptcha = null;
+  try {
+    // Solo usar reCAPTCHA si está disponible
+    executeRecaptcha = null; // Por ahora deshabilitado para evitar errores
+  } catch (error) {
+    console.warn('reCAPTCHA not available');
+  }
 
   const onFinish = async (values) => {
     setLoading(true);
+    setLoginError("");
+    
     try {
-      const response = await axiosPublicInstance.post('/auth/login', {
+      let recaptchaToken = null;
+      
+      // Solo usar reCAPTCHA si está disponible y habilitado
+      if (executeRecaptcha) {
+        try {
+          recaptchaToken = await executeRecaptcha('login');
+          if (!recaptchaToken) {
+            message.warning('Verificación de seguridad no disponible, procediendo sin ella.');
+          }
+        } catch (error) {
+          console.warn('reCAPTCHA error:', error);
+          message.warning('Verificación de seguridad no disponible, procediendo sin ella.');
+        }
+      }
+
+      const requestData = {
         email: values.email,
         password: values.password,
-      });
+      };
+      
+      // Solo agregar token si está disponible
+      if (recaptchaToken) {
+        requestData.recaptcha_token = recaptchaToken;
+      }
+
+      const response = await axiosPublicInstance.post('/auth/login', requestData);
 
       if (response.data.success) {
         // Guardar token y datos del usuario
@@ -105,8 +138,8 @@ const Login = () => {
           layout="vertical"
           requiredMark={false}
           initialValues={{
-            email: 'admin@gmail.com',
-            password: '12345678'
+           // email: 'admin@gmail.com',
+           // password: '12345678'
           }}
         >
           <Form.Item
@@ -186,10 +219,38 @@ const Login = () => {
                 'Iniciar Sesión'
               )}
             </Button>
+            
+            {/* Indicador de protección reCAPTCHA - solo si está disponible */}
+            {executeRecaptcha && (
+              <div style={{ 
+                textAlign: 'center', 
+                marginTop: '12px',
+                padding: '8px',
+                backgroundColor: isDarkMode ? '#1a1d29' : '#f0f5ff',
+                border: `1px solid ${isDarkMode ? '#1890ff' : '#d6e4ff'}`,
+                borderRadius: '8px'
+              }}>
+                <Space size="small">
+                  <SafetyOutlined style={{ color: '#1890ff' }} />
+                  <Text type="secondary" style={{ fontSize: '12px' }}>
+                    Protegido por Google reCAPTCHA contra accesos no autorizados
+                  </Text>
+                </Space>
+              </div>
+            )}
           </Form.Item>
         </Form>
 
         <Divider style={{ margin: '24px 0', borderColor: isDarkMode ? '#303030' : '#f0f0f0' }} />
+
+        <div style={{ textAlign: 'center', marginBottom: '16px' }}>
+          <Text type="secondary">
+            ¿No tienes una cuenta?{' '}
+            <Link to="/register" style={{ color: '#1890ff', fontWeight: 600 }}>
+              Registrar empresa
+            </Link>
+          </Text>
+        </div>
 
         <div style={{ textAlign: 'center' }}>
           <Text type="secondary" style={{ fontSize: '12px' }}>
