@@ -240,7 +240,7 @@ const AppLayout = ({ children }) => {
             }}
           >
             <img
-              src={companyLogo ? `${STORAGE_BASE_URL}/${userInfo.empresa.data.logo}` : `${STORAGE_BASE_URL}/garage.png`}
+              src={companyLogo ? `${STORAGE_BASE_URL}/${userInfo.empresa.data.logo}` : `${STORAGE_BASE_URL}/companies/garage.png`}
               alt="Logo empresa"
 
               style={{

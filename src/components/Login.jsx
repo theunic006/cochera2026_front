@@ -69,11 +69,27 @@ const Login = () => {
       }
     } catch (error) {
       console.error('Error al iniciar sesión:', error);
-      setLoginError('Usuario inválido');
-      message.error(
-        error.response?.data?.message || 
-        'Error al iniciar sesión. Verifica tus credenciales.'
-      );
+      
+      // Manejo específico de errores de conexión
+      if (error.code === 'ERR_NETWORK' || error.code === 'ERR_CONNECTION_REFUSED') {
+        setLoginError('No se puede conectar al servidor. Verifica tu conexión a internet.');
+        message.error('Error de conexión: No se puede conectar al servidor.');
+      } else if (error.response?.status === 401) {
+        setLoginError('Credenciales incorrectas');
+        message.error('Email o contraseña incorrectos');
+      } else if (error.response?.status === 422) {
+        setLoginError('Datos de login inválidos');
+        message.error('Por favor verifica que tus datos sean correctos');
+      } else if (error.response?.status >= 500) {
+        setLoginError('Error del servidor. Intenta más tarde.');
+        message.error('Error interno del servidor. Intenta nuevamente en unos minutos.');
+      } else {
+        setLoginError('Error inesperado al iniciar sesión');
+        message.error(
+          error.response?.data?.message || 
+          'Error al iniciar sesión. Verifica tus credenciales.'
+        );
+      }
     } finally {
       setLoading(false);
     }

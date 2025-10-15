@@ -83,24 +83,36 @@ const Register = () => {
         }
       }
 
-      // Preparar FormData exactamente como funciona en Postman
-      const formData = new FormData();
+      // Preparar datos - usar JSON si no hay imagen, FormData si hay imagen
+      let requestData;
+      let headers = {};
       
-      // Datos de la empresa (estructura que funciona en Postman)
-      formData.append('nombre', values.nombre.trim());
-      formData.append('ubicacion', values.ubicacion?.trim() || '');
-      formData.append('descripcion', values.descripcion?.trim() || '');
-      formData.append('capacidad', values.capacidad);
-      formData.append('estado', 'pendiente');
+      const baseData = {
+        nombre: values.nombre.trim(),
+        ubicacion: values.ubicacion?.trim() || '',
+        descripcion: values.descripcion?.trim() || '',
+        capacidad: values.capacidad,
+        estado: 'pendiente'
+      };
       
       // Agregar token de reCAPTCHA solo si está disponible
       if (recaptchaToken) {
-        formData.append('recaptcha_token', recaptchaToken);
+        baseData.recaptcha_token = recaptchaToken;
       }
       
-      // Agregar logo si existe
       if (logoFile) {
+        // Si hay imagen, usar FormData
+        const formData = new FormData();
+        Object.keys(baseData).forEach(key => {
+          formData.append(key, baseData[key]);
+        });
         formData.append('logo', logoFile);
+        requestData = formData;
+        headers['Content-Type'] = 'multipart/form-data';
+      } else {
+        // Si no hay imagen, usar JSON (como funciona en Postman)
+        requestData = baseData;
+        headers['Content-Type'] = 'application/json';
       }
 
       // Generar credenciales automáticamente para mostrar al usuario
@@ -115,14 +127,13 @@ const Register = () => {
         capacidad: values.capacidad,
         estado: 'pendiente',
         hasLogo: !!logoFile,
-        hasRecaptcha: !!recaptchaToken
+        hasRecaptcha: !!recaptchaToken,
+        requestType: logoFile ? 'FormData' : 'JSON'
       });
 
       // Usar endpoint que funciona en Postman: /api/companies/register
-      const response = await axiosPublicInstance.post('/companies/register', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
+      const response = await axiosPublicInstance.post('/companies/register', requestData, {
+        headers: headers,
       });
 
       if (response.data.success) {
@@ -151,15 +162,28 @@ const Register = () => {
       }
     } catch (error) {
       console.error('Error al registrar:', error);
+      console.error('Error details:', {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        headers: error.response?.headers,
+        config: {
+          url: error.config?.url,
+          method: error.config?.method,
+          headers: error.config?.headers
+        }
+      });
       
       if (error.response?.status === 422 && error.response?.data?.errors) {
         // Manejo de errores de validación
         setErrors(error.response.data.errors);
         message.error('Por favor, corrija los errores en el formulario');
+      } else if (error.response?.status === 500) {
+        message.error('Error interno del servidor. Intenta sin imagen o verifica que el backend esté configurado para manejar archivos.');
       } else if (error.response?.data?.message) {
         message.error(error.response.data.message);
       } else if (error.code === 'ERR_NETWORK' || error.code === 'ERR_CONNECTION_REFUSED') {
-        message.error('No se puede conectar al servidor. Verifica que el backend esté corriendo en http://127.0.0.1:8000');
+        message.error('No se puede conectar al servidor. Verifica tu conexión a internet.');
       } else {
         message.error('Error al registrar la empresa. Por favor, intenta nuevamente.');
       }
