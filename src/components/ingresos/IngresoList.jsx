@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { calcularTiempoEstadiaConTolerancia } from '../../utils/CalValores';
 import { Card, Button, Space, Tooltip, Row, Col, message, Tag, Input } from 'antd';
-import { CarOutlined, ClockCircleOutlined, DollarOutlined, TagOutlined, CheckCircleOutlined } from '@ant-design/icons';
+import { CarOutlined, ClockCircleOutlined, DollarOutlined, TagOutlined, CheckCircleOutlined, MobileOutlined } from '@ant-design/icons';
 import TableBase from '../common/TableBase';
 import { ingresoService } from '../../services/ingresoService';
 import { vehiculoService } from '../../services/vehiculoService';
@@ -11,8 +11,32 @@ import TerminarModal from './TerminarModal';
 import { vehicleTypeService } from '../../services/vehicleTypeService';
 import { toleranceService } from '../../services/toleranceService';
 import { useAuth } from '../../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 const { Search } = Input;
+
+// Hook personalizado para detectar dispositivos móviles
+const useIsMobile = () => {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkDevice = () => {
+      const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+      const mobileRegex = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i;
+      const isMobileDevice = mobileRegex.test(userAgent);
+      const isSmallScreen = window.innerWidth <= 768;
+      
+      setIsMobile(isMobileDevice || isSmallScreen);
+    };
+
+    checkDevice();
+    window.addEventListener('resize', checkDevice);
+
+    return () => window.removeEventListener('resize', checkDevice);
+  }, []);
+
+  return isMobile;
+};
 
 // Componente optimizado para el input de nueva placa
 const PlacaInput = React.memo(({ value, onChange, onRegister, loading, disabled }) => (
@@ -40,6 +64,8 @@ const PlacaInput = React.memo(({ value, onChange, onRegister, loading, disabled 
 const IngresoList = () => {
   const [searchText, setSearchText] = useState("");
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const isMobile = useIsMobile(); // Hook para detectar dispositivos móviles
   const [toleranciaMinutos, setToleranciaMinutos] = useState(null);
   const [tiposVehiculo, setTiposVehiculo] = useState([]);
   const [nuevaPlaca, setNuevaPlaca] = useState("");
@@ -92,6 +118,13 @@ const IngresoList = () => {
       setLoading(false);
     }
   }, []);
+
+  // Redirección automática para dispositivos móviles
+  useEffect(() => {
+    if (isMobile) {
+      navigate('/ingresos-mobile');
+    }
+  }, [isMobile, navigate]);
 
   // Cargar tipos de vehículo y tolerancia al montar
   useEffect(() => {
@@ -424,6 +457,19 @@ const IngresoList = () => {
                 loading={registrando}
                 disabled={!nuevaPlaca.trim()}
               />
+            </Card>
+          </Col>
+          <Col xs={24} sm={24} lg={12} style={{ marginBottom: 16 }}>
+            <Card>
+              <Button
+                type="primary"
+                icon={<MobileOutlined />}
+                onClick={() => navigate('/ingresos-mobile')}
+                className="mobile-mode-btn"
+                size="large"
+              >
+                Modo Móvil
+              </Button>
             </Card>
           </Col>
         </Row>

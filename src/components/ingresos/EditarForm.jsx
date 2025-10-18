@@ -1,8 +1,8 @@
-import React, { useEffect, useRef } from "react";
-import { useAuthInfo } from '../../hooks/useAuthInfo';
+import React, { useEffect } from "react";
 import { Modal, Form, Input, Button, Space, Select, message } from "antd";
+import { useAuth } from '../../context/AuthContext';
 import "./EditarForm.css";
-import { CarOutlined } from "@ant-design/icons";
+import { PrinterOutlined } from "@ant-design/icons";
 import { ingresoService } from "../../services/ingresoService";
 
 const EditarForm = ({
@@ -13,9 +13,9 @@ const EditarForm = ({
   ingresoEdit,
   tiposVehiculo,
 }) => {
-  const { userInfo } = useAuthInfo();
+  const { user, token } = useAuth();
   const [form] = Form.useForm();
-  const ticketRef = useRef(null);
+
 
   useEffect(() => {
     if (visible && ingresoEdit) {
@@ -38,106 +38,25 @@ const EditarForm = ({
     form.setFieldsValue({ observaciones: descripcion });
   };
 
-  // Verificar estado de QZ Tray
-  const handleCheckQZTray = async () => {
-    try {
-      message.loading("Verificando QZ Tray...", 0);
-      const status = await printService.checkQZTrayStatus();
-      message.destroy();
-      
-      if (status.available) {
-        message.success({
-          content: `✅ QZ Tray está funcionando correctamente. ${status.message}`,
-          duration: 4
-        });
-      } else {
-        message.warning({
-          content: `⚠️ ${status.message}`,
-          duration: 6
-        });
-      }
-    } catch (error) {
-      message.destroy();
-      message.error({
-        content: `Error verificando QZ Tray: ${error.message}`,
-        duration: 5
-      });
-    }
-  };
-
-  // Imprimir ticket usando QZ Tray
+  // Imprimir ticket usando solo el endpoint GET
   const handlePrintTicket = async () => {
     if (!ingresoEdit?.id) {
       message.error("No se encontró el ingreso para imprimir");
       return;
     }
-    
     try {
-      message.loading("Conectando con la impresora...", 0);
-      
-      // Conectar a QZ Tray
-      await printService.connect();
-      
-      // Obtener el tipo de vehículo seleccionado del formulario
-      const tipoVehiculoId = form.getFieldValue('tipo_vehiculo');
-      const tipoVehiculoSeleccionado = tiposVehiculo?.find(tv => tv.id === tipoVehiculoId);
-      
-      // Preparar datos para la plantilla del ticket
-      const ticketData = {
-        id: ingresoEdit.id,
-        placa: ingresoEdit.vehiculo?.placa || form.getFieldValue('placa') || 'No especificado',
-        fechaIngreso: ingresoEdit.fecha_ingreso || 'No especificado',
-        horaIngreso: ingresoEdit.hora_ingreso || 'No especificado',
-        tipoVehiculo: tipoVehiculoSeleccionado?.nombre || 'No especificado',
-        valorHoraFraccion: tipoVehiculoSeleccionado?.valor || 'No especificado'
-      };
-      
-      // Generar el contenido del ticket usando la plantilla
-      const ticketContent = TicketTemplate.generarTicketIngreso(ticketData);
-      
+      // Usar apiClient para la petición
+      const { default: apiClient } = await import('../../utils/apiClient');
+      const response = await apiClient.get(`/ingresos/${ingresoEdit.id}/print`);
       message.destroy();
-      
-      // Imprimir usando QZ Tray con printRaw
-      await printService.printRaw(ticketContent.join(''));
-      
-      message.success("Ticket enviado a la impresora correctamente");
-      
+      if (response.status === 200) {
+       
+      } else {
+        message.error("Error al imprimir el ticket");
+      }
     } catch (error) {
       message.destroy();
-      console.error('Error al imprimir:', error);
-      
-      // Manejo de errores más específico
-      if (error.message.includes('QZ Tray no responde')) {
-        message.error({
-          content: "QZ Tray no responde. Reinicia QZ Tray desde la bandeja del sistema e inténtalo de nuevo.",
-          duration: 6
-        });
-      } else if (error.message.includes('QZ Tray no está corriendo')) {
-        message.error({
-          content: "QZ Tray no está corriendo. Inicia QZ Tray desde el menú de inicio o la bandeja del sistema.",
-          duration: 6
-        });
-      } else if (error.message.includes('QZ Tray perdió la conexión')) {
-        message.error({
-          content: "Se perdió la conexión con QZ Tray. Verifica que esté corriendo y vuelve a intentar.",
-          duration: 6
-        });
-      } else if (error.message.includes('impresoras disponibles')) {
-        message.error({
-          content: "No hay impresoras disponibles. Verifica que tu impresora esté conectada y encendida.",
-          duration: 6
-        });
-      } else if (error.message.includes('QZ Tray no está instalado')) {
-        message.error({
-          content: "QZ Tray no está instalado. Descárgalo desde https://qz.io/download/ e instálalo.",
-          duration: 8
-        });
-      } else {
-        message.error({
-          content: `Error al imprimir: ${error.message}`,
-          duration: 5
-        });
-      }
+      message.error(`Error al imprimir: ${error.message}`);
     }
   };
 
@@ -196,24 +115,16 @@ const EditarForm = ({
             color="danger"
             variant="solid"
             onClick={handlePrintTicket}
-            icon={<CarOutlined />}
-            type="default"
+            icon={<PrinterOutlined />}
+            type="primary"
           >
             Imprimir Ticket
           </Button>
           
-          <Button
-            size="small"
-            onClick={handleCheckQZTray}
-            type="dashed"
-            title="Verificar estado de QZ Tray"
-          >
-            🔍 QZ Tray
-          </Button>
           {/* Mostrar nombre de impresora de la empresa */}
-          {userInfo?.empresa?.data?.imp_input && (
+          {user?.empresa?.data?.imp_input && (
             <span style={{ color: "#722ed1", fontWeight: 500, fontSize: 16 }}>
-              Impresora: {userInfo.empresa.data.imp_input}
+              Impresora: {user.empresa.data.imp_input}
             </span>
           )}
           {ingresoEdit?.user?.name && (
@@ -224,7 +135,7 @@ const EditarForm = ({
           )}
         </div>
 
-        {/* Ticket oculto eliminado, ahora se imprime directo con QZ Tray */}
+        {/* Ticket se imprime directamente con API Parzibyte */}
         <div className="form-row-group">
           <label className="form-label">Placa:</label>
           <Form.Item

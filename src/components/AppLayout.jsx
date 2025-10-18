@@ -21,6 +21,7 @@ import {
   FieldTimeOutlined,
   TagOutlined,
   DollarOutlined,
+  PrinterOutlined,
 } from '@ant-design/icons';
 import { useAuth } from '../context/AuthContext';
 import { useAuthInfo } from '../hooks/useAuthInfo';
@@ -130,16 +131,16 @@ const AppLayout = ({ children }) => {
       onClick: () => handleMobileNavigation('/observaciones'),
     },
     {
-      key: '/configuracion-impresora',
-      icon: <SettingOutlined />,
-      label: 'Configuración Impresora',
-      onClick: () => handleMobileNavigation('/configuracion-impresora'),
+      key:'/prueba-impresion',
+      icon: <CreditCardOutlined />,
+      label: 'Prueba de Impresión',
+      onClick: () => handleMobileNavigation('/prueba-impresion'), 
     },
     {
-      key: '/ventas-ejemplo',
-      icon: <FileTextOutlined />,
-      label: 'Ventas Ejemplo',
-      onClick: () => handleMobileNavigation('/ventas-ejemplo'),
+      key:'/prueba-parzibyte',
+      icon: <PrinterOutlined />,
+      label: 'API Parzibyte',
+      onClick: () => handleMobileNavigation('/prueba-parzibyte'), 
     }
   ];
   // Solo SUPERUSUARIO (idrol === 1) puede ver 'Empresas'
@@ -382,7 +383,7 @@ const AppLayout = ({ children }) => {
         </Header>
 
         <Content style={contentStyle}>
-          {children}
+         {children}
         </Content>
       </Layout>
     </Layout>

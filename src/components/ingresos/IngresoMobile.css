@@ -1,0 +1,428 @@
+/* IngresoMobile.css */
+
+/* Contenedor principal */
+.ingreso-mobile-container {
+  height: 100vh;
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
+}
+
+.ingreso-mobile-container.dark {
+  background-color: #141414;
+}
+
+.ingreso-mobile-container.light {
+  background-color: #f5f5f5;
+}
+
+/* Header */
+.ingreso-mobile-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  padding: 12px 16px;
+  border-bottom: 1px solid;
+}
+
+.ingreso-mobile-header.dark {
+  background-color: #1f1f1f;
+  border-bottom-color: #303030;
+}
+
+.ingreso-mobile-header.light {
+  background-color: #ffffff;
+  border-bottom-color: #f0f0f0;
+}
+
+.ingreso-mobile-header h4.header-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.ingreso-mobile-header h4.header-title.dark {
+  color: #fff;
+}
+
+.ingreso-mobile-header h4.header-title.light {
+  color: #000;
+}
+
+.ingreso-mobile-header .header-back-button.dark {
+  color: #fff;
+}
+
+.ingreso-mobile-header .header-back-button.light {
+  color: #000;
+}
+
+.ingreso-mobile-header .header-count {
+  font-size: 12px;
+  color: #8c8c8c;
+}
+
+.ingreso-mobile-header .header-user {
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.ingreso-mobile-header .header-user.dark {
+  color: #d9d9d9;
+}
+
+.ingreso-mobile-header .header-user.light {
+  color: #666;
+}
+
+/* Contenido principal */
+.ingreso-mobile-content {
+  height: calc(100vh - 140px);
+  overflow-y: auto;
+  padding: 0;
+}
+
+/* Sección de búsqueda */
+.ingreso-mobile-search-section {
+  padding: 16px;
+  border-bottom: 1px solid;
+}
+
+.ingreso-mobile-search-section.dark {
+  background-color: #1f1f1f;
+  border-bottom-color: #303030;
+}
+
+.ingreso-mobile-search-section.light {
+  background-color: #ffffff;
+  border-bottom-color: #f0f0f0;
+}
+
+.ingreso-mobile-search-section .search-input {
+  border-radius: 8px;
+}
+
+.ingreso-mobile-search-section .vehicle-counter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 6px;
+}
+
+.ingreso-mobile-search-section .vehicle-counter.dark {
+  background-color: #262626;
+}
+
+.ingreso-mobile-search-section .vehicle-counter.light {
+  background-color: #f0f0f0;
+}
+
+.ingreso-mobile-search-section .vehicle-counter .counter-label {
+  font-weight: 600;
+}
+
+.ingreso-mobile-search-section .vehicle-counter .counter-label.dark {
+  color: #fff;
+}
+
+.ingreso-mobile-search-section .vehicle-counter .counter-label.light {
+  color: #333;
+}
+
+.ingreso-mobile-search-section .vehicle-counter .counter-value {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1890ff;
+  padding: 4px 12px;
+  border-radius: 4px;
+  border: 1px solid;
+}
+
+.ingreso-mobile-search-section .vehicle-counter .counter-value.dark {
+  background-color: #1f1f1f;
+  border-color: #434343;
+}
+
+.ingreso-mobile-search-section .vehicle-counter .counter-value.light {
+  background-color: #fff;
+  border-color: #d9d9d9;
+}
+
+/* Sección de agregar */
+.ingreso-mobile-add-section {
+  padding: 16px;
+  border-bottom: 1px solid;
+}
+
+.ingreso-mobile-add-section.dark {
+  background-color: #262626;
+  border-bottom-color: #303030;
+}
+
+.ingreso-mobile-add-section.light {
+  background-color: #fafafa;
+  border-bottom-color: #f0f0f0;
+}
+
+.ingreso-mobile-add-section .add-input {
+  border-radius: 8px 0 0 8px;
+}
+
+.ingreso-mobile-add-section .add-button {
+  border-radius: 0 8px 8px 0;
+}
+
+/* Items de la lista */
+.ingreso-mobile-list-item {
+  padding: 16px;
+  margin: 0;
+  border-bottom: 1px solid;
+}
+
+.ingreso-mobile-list-item.dark {
+  background-color: #1f1f1f;
+  border-bottom-color: #303030;
+}
+
+.ingreso-mobile-list-item.light {
+  background-color: #ffffff;
+  border-bottom-color: #f0f0f0;
+}
+
+/* Placa del vehículo */
+.ingreso-mobile-list-item .vehicle-plate {
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.ingreso-mobile-list-item .vehicle-type-tag {
+  margin-left: 8px;
+}
+
+/* Información de tiempo */
+.ingreso-mobile-list-item .time-info {
+  font-size: 12px;
+}
+
+.ingreso-mobile-list-item .time-info.dark {
+  color: #8c8c8c;
+}
+
+.ingreso-mobile-list-item .time-info.light {
+  color: #595959;
+}
+
+/* Precio */
+.ingreso-mobile-list-item .price-icon {
+  color: #ff4d4f;
+  font-size: 16px;
+}
+
+.ingreso-mobile-list-item .price-text {
+  font-size: 18px;
+  color: #f1ff28;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+  font-weight: 700;
+}
+
+/* Botón FIN */
+.ingreso-mobile-list-item .fin-button-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+}
+
+.ingreso-mobile-list-item .fin-button {
+  width: 60px;
+  height: 60px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: bold;
+  box-shadow: 0 2px 8px rgba(255, 77, 79, 0.3);
+}
+
+/* Estados de carga */
+.ingreso-mobile-loading {
+  padding: 20px;
+  text-align: center;
+  color: #8c8c8c;
+}
+
+.ingreso-mobile-empty {
+  padding: 40px 20px;
+  text-align: center;
+  color: #8c8c8c;
+}
+
+.ingreso-mobile-empty .empty-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  display: block;
+}
+
+.ingreso-mobile-empty .empty-icon.dark {
+  color: #434343;
+}
+
+.ingreso-mobile-empty .empty-icon.light {
+  color: #d9d9d9;
+}
+
+/* Drawer de edición */
+.ingreso-mobile-drawer .drawer-body {
+  padding: 16px;
+}
+
+.ingreso-mobile-drawer .form-input {
+  text-transform: uppercase;
+}
+
+.ingreso-mobile-drawer .form-input.large {
+  font-size: 16px;
+}
+
+.ingreso-mobile-drawer .form-buttons {
+  width: 100%;
+  justify-content: space-between;
+  margin-top: 24px;
+}
+
+/* Observaciones del vehículo */
+.ingreso-mobile-drawer .vehicle-observations {
+  margin-bottom: 16px;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid;
+}
+
+.ingreso-mobile-drawer .vehicle-observations.dark {
+  background-color: #1f1f1f;
+  border-color: #303030;
+}
+
+.ingreso-mobile-drawer .vehicle-observations.light {
+  background-color: #f5f5f5;
+  border-color: #d9d9d9;
+}
+
+.ingreso-mobile-drawer .vehicle-observations .observations-title {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: bold;
+}
+
+.ingreso-mobile-drawer .vehicle-observations .observation-item {
+  padding: 8px;
+  margin-bottom: 4px;
+  border-radius: 4px;
+  cursor: pointer;
+  border: 1px solid;
+}
+
+.ingreso-mobile-drawer .vehicle-observations .observation-item.dark {
+  background-color: #262626;
+  border-color: #434343;
+}
+
+.ingreso-mobile-drawer .vehicle-observations .observation-item.light {
+  background-color: #fff;
+  border-color: #f0f0f0;
+}
+
+.ingreso-mobile-drawer .vehicle-observations .observation-item .observation-header {
+  margin-bottom: 2px;
+}
+
+.ingreso-mobile-drawer .vehicle-observations .observation-item .observation-type {
+  color: #722ed1;
+  font-weight: bold;
+}
+
+.ingreso-mobile-drawer .vehicle-observations .observation-item .observation-description {
+  margin-left: 8px;
+}
+
+.ingreso-mobile-drawer .vehicle-observations .observation-item .observation-meta {
+  font-size: 11px;
+  color: #8c8c8c;
+}
+
+/* Modal de terminar */
+.ingreso-mobile-modal .modal-title {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.ingreso-mobile-modal .modal-title .title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.ingreso-mobile-modal .modal-subtitle {
+  color: #8c8c8c;
+  font-size: 14px;
+}
+
+.ingreso-mobile-modal .payment-summary {
+  margin-bottom: 24px;
+  width: 100%;
+}
+
+.ingreso-mobile-modal .payment-summary .summary-row {
+  justify-content: space-between;
+  width: 100%;
+  display: flex;
+}
+
+.ingreso-mobile-modal .payment-summary .summary-total {
+  font-size: 18px;
+  color: #52c41a;
+}
+
+.ingreso-mobile-modal .payment-buttons {
+  width: 100%;
+}
+
+.ingreso-mobile-modal .payment-button {
+  width: 100%;
+}
+
+.ingreso-mobile-modal .payment-button.efectivo {
+  background: #52c41a;
+  border-color: #52c41a;
+}
+
+.ingreso-mobile-modal .payment-button.yape {
+  background: #1890ff;
+  border-color: #1890ff;
+  color: #fff;
+}
+
+/* Responsive */
+@media (max-width: 576px) {
+  .ingreso-mobile-header {
+    padding: 8px 12px;
+  }
+  
+  .ingreso-mobile-search-section,
+  .ingreso-mobile-add-section {
+    padding: 12px;
+  }
+  
+  .ingreso-mobile-list-item {
+    padding: 12px;
+  }
+  
+  .ingreso-mobile-list-item .fin-button {
+    width: 50px;
+    height: 50px;
+    font-size: 12px;
+  }
+}

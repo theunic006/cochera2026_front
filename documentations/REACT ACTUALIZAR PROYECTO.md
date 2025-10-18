@@ -1,5 +1,7 @@
 # 🔄 Actualizar Proyecto React 19 en WHM/cPanel
 
+cp -r dist/* ../garage/
+
 ## 🎯 Objetivo
 Actualizar un proyecto React 19 existente en WHM/cPanel desde GitHub usando SSH, manteniendo la configuración de producción y minimizando el tiempo de inactividad.
 

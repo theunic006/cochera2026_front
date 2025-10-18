@@ -38,3 +38,59 @@
 .read-the-docs {
   color: #888;
 }
+
+/* Estilos para vista móvil de ingresos */
+.mobile-container {
+  height: 100vh;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+}
+
+.mobile-container * {
+  box-sizing: border-box;
+}
+
+/* Ocultar scroll horizontal en móvil */
+.mobile-container::-webkit-scrollbar {
+  width: 0px;
+  background: transparent;
+}
+
+/* Estilos responsivos para móvil */
+@media (max-width: 768px) {
+  .mobile-container {
+    padding: 0;
+    margin: 0;
+  }
+  
+  .ant-drawer .ant-drawer-body {
+    padding: 16px;
+  }
+  
+  .ant-modal .ant-modal-body {
+    padding: 16px;
+  }
+}
+
+/* Estilos para los estados de observación en vista móvil */
+.obs-opcion-leve { color: #52c41a !important; }
+.obs-opcion-grave { color: #ff4d4f !important; }
+.obs-opcion-advertencia { color: #faad14 !important; }
+.obs-opcion-info { color: #1890ff !important; }
+.obs-opcion-otro { color: #722ed1 !important; }
+.obs-opcion-ninguno { color: inherit; }
+
+/* Transiciones suaves */
+.mobile-container * {
+  transition: all 0.2s ease;
+}
+
+/* Estilos para el botón de modo móvil */
+.mobile-mode-btn {
+  background: linear-gradient(135deg, #722ed1 0%, #1890ff 100%) !important;
+  border: none !important;
+  border-radius: 8px !important;
+  height: 40px !important;
+  box-shadow: 0 2px 8px rgba(114, 46, 209, 0.3) !important;
+}

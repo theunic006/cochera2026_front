@@ -19,11 +19,9 @@ import Reportes from './components/Reportes';
 import ProtectedRoute from './components/ProtectedRoute';
 import RegistroList from './components/registros/RegistroList';
 import IngresoList from './components/ingresos/IngresoList';
+import IngresoMobile from './components/ingresos/IngresoMobile';
 import SalidasList from './components/salidas/SalidasList';
 import { ObservacionesList } from './components/observaciones';
-
-import PluginPrinterConfig from './components/PluginPrinterConfig';
-import VentasExample from './components/VentasExample';
 
 import "./App.css";
 
@@ -98,6 +96,14 @@ const AppRouter = () => {
         } 
       />
       <Route 
+        path="/ingresos-mobile" 
+        element={
+          <ProtectedRoute>
+            <IngresoMobile />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
         path="/empresas" 
         element={
           <ProtectedRoute>
@@ -161,24 +167,6 @@ const AppRouter = () => {
           </ProtectedRoute>
         } 
       />
-
-      <Route 
-        path="/configuracion-impresora" 
-         element={
-          <ProtectedRoute>
-            <PluginPrinterConfig />
-          </ProtectedRoute>
-        } 
-      />
-      <Route 
-        path="/ventas-ejemplo" 
-         element={
-          <ProtectedRoute>
-            <VentasExample />
-          </ProtectedRoute>
-        } 
-      />
-
       {/* Rutas adicionales placeholder */}
       <Route 
         path="/pagos" 
