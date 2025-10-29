@@ -113,11 +113,7 @@ php artisan migrate --force
 ```bash
 # Regenerar cache de configuración
 php artisan config:cache
-
-# Regenerar cache de rutas
 php artisan route:cache
-
-# Regenerar cache de vistas
 php artisan view:cache
 
 # Optimizar autoloader

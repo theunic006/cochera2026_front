@@ -7,6 +7,7 @@ import {
   Space,
   Form,
   Select,
+  Input,
   message
 } from 'antd';
 import {
@@ -58,28 +59,28 @@ const ConfigImpresora = ({
         return;
       }
 
-      // Preparar datos para actualizar solo las impresoras
+      // Preparar datos para actualizar impresoras y ngrok
       const updateData = {
         imp_input: values.imp_input || null,
-        imp_output: values.imp_output || null
+        imp_output: values.imp_output || null,
+        ngrok: values.ngrok || null
       };
 
-      // Usar el nuevo método específico para impresoras
-      const response = await companyService.updatePrinters(company.id, updateData);
+  // Usar el nuevo método específico para impresoras y ngrok
+  const response = await companyService.updatePrinters(company.id, updateData);
 
       if (response.success) {
-        // Actualizar el estado local del usuario con las nuevas impresoras
+        // Actualizar el estado local del usuario con las nuevas impresoras y ngrok
         setUsuario(prev => ({
           ...prev,
           company: {
             ...prev.company,
             imp_input: values.imp_input,
-            imp_output: values.imp_output
+            imp_output: values.imp_output,
+            ngrok: values.ngrok
           }
         }));
-
         setEditingPrinters(false);
-
       } else {
         message.error('Error al guardar la configuración de impresoras');
         console.error('❌ Error en la respuesta:', response);
@@ -143,7 +144,8 @@ const ConfigImpresora = ({
               setEditingPrinters(true);
               form.setFieldsValue({
                 imp_input: company.imp_input || '',
-                imp_output: company.imp_output || ''
+                imp_output: company.imp_output || '',
+                ngrok: company.ngrok || ''
               });
             }
           }}
@@ -228,6 +230,17 @@ const ConfigImpresora = ({
             />
           </Form.Item>
 
+          <Form.Item
+            name="ngrok"
+            label={<Text style={{ color: colors.text, fontSize: 12 }}>Token Ngrok para impresión local:</Text>}
+            style={{ marginBottom: 12 }}
+          >
+            <Input
+              placeholder="Pega aquí el token de ngrok"
+              style={{ width: '100%' }}
+            />
+          </Form.Item>
+
           <div style={{ display: 'flex', gap: 8 }}>
             <Button 
               type="primary" 
@@ -266,6 +279,14 @@ const ConfigImpresora = ({
             </Text>
             <Text strong style={{ color: colors.text, fontSize: 13 }}>
               {company.imp_output || "No configurada"}
+            </Text>
+          </div>
+          <div>
+            <Text style={{ color: colors.textSecondary, fontSize: 12, display: 'block' }}>
+              Token Impresora:
+            </Text>
+            <Text strong style={{ color: colors.text, fontSize: 13 }}>
+              {company.ngrok || "No configurado"}
             </Text>
           </div>
         </Space>

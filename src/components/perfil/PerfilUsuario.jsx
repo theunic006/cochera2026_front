@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { userService } from "../../services/userService";
 import printerService from "../../services/printerService";
-import ConfigImpresora from "./ConfigImpresora";
+import ConfigImpresora from "./ConfigImpresora"; //el que llama a las mimpresoraas
 import UserForm from "../users/UserForm";
 import { STORAGE_BASE_URL } from '../../utils/apiClient';
 
@@ -549,6 +549,14 @@ const PerfilUsuario = () => {
                                 Impresora Salida
                               </Text>
                               <Text style={{ color: colors.textSecondary }}>{company.imp_output || "No configurada"}</Text>
+                            </div>
+                          </Col>
+                          <Col xs={24} sm={12}>
+                            <div style={{ marginBottom: 16 }}>
+                              <Text strong style={{ color: colors.text, display: 'block', marginBottom: 4 }}>
+                                Token Impresora:
+                              </Text>
+                              <Text style={{ color: colors.textSecondary }}>{company.ngrok || "No configurado"}</Text>
                             </div>
                           </Col>
                         </Row>

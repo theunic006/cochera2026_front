@@ -2,8 +2,9 @@ import { toleranceService } from '../../services/toleranceService';
 import { useAuth } from '../../context/AuthContext';
 import { calcularTiempoEstadiaConTolerancia, getTiempoEstadia } from '../../utils/CalValores';
 import React from "react";
+import { getNotaVentaHTML } from "./NotaVentaTemplate";
 import { Modal, Button, Descriptions } from "antd";
-import { CarOutlined, ClockCircleOutlined, TagOutlined, CreditCardOutlined } from "@ant-design/icons";
+import { CarOutlined, ClockCircleOutlined, TagOutlined, CreditCardOutlined, PrinterOutlined } from "@ant-design/icons";
 import { ingresoService } from '../../services/ingresoService';
 
 
@@ -59,16 +60,71 @@ const TerminarModal = ({ visible, onCancel, ingreso, onPagoEfectivo, onPagoYape 
     }
   };
 
+  const handlePrintBoleta = () => {
+    const tiempoEstadia = getTiempoEstadia(ingreso);
+    const tiempoObj = calcularTiempoEstadiaConTolerancia(ingreso.fecha_ingreso, ingreso.hora_ingreso, toleranciaMinutos);
+    const cantidadHoras = tiempoObj.fracciones > 0 ? tiempoObj.fracciones : 1;
+    const numeroBoleta = `B002 - ${ingreso.id || '10300686'}`;
+    const totalGravado = (total / 1.18).toFixed(2);
+    const igv = (total - totalGravado).toFixed(2);
+
+    const numeroATexto = (num) => {
+      const unidades = ['CERO', 'UNO', 'DOS', 'TRES', 'CUATRO', 'CINCO', 'SEIS', 'SIETE', 'OCHO', 'NUEVE'];
+      const decenas = ['', '', 'VEINTE', 'TREINTA', 'CUARENTA', 'CINCUENTA', 'SESENTA', 'SETENTA', 'OCHENTA', 'NOVENTA'];
+      const especiales = ['DIEZ', 'ONCE', 'DOCE', 'TRECE', 'CATORCE', 'QUINCE', 'DIECISÉIS', 'DIECISIETE', 'DIECIOCHO', 'DIECINUEVE'];
+      const entero = Math.floor(num);
+      const decimal = Math.round((num - entero) * 100);
+      let texto = '';
+      if (entero >= 10 && entero < 20) {
+        texto = especiales[entero - 10];
+      } else if (entero >= 20) {
+        const dec = Math.floor(entero / 10);
+        const uni = entero % 10;
+        texto = decenas[dec] + (uni > 0 ? ' Y ' + unidades[uni] : '');
+      } else {
+        texto = unidades[entero];
+      }
+      return texto + ' CON ' + decimal.toString().padStart(2, '0') + '/100 SOLES';
+    };
+
+    const montoTexto = numeroATexto(total);
+    const boletaWindow = window.open('', '_blank');
+    const html = getNotaVentaHTML({
+      user,
+      vehiculo,
+      tipoVehiculo,
+      cantidadHoras,
+      precioHora,
+      total,
+      totalGravado,
+      igv,
+      numeroBoleta,
+      montoTexto
+    });
+    boletaWindow.document.write(html);
+    boletaWindow.document.close();
+  };
+
   return (
     <Modal
       open={visible}
       onCancel={onCancel}
       footer={null}
       title={
-        <span>
-          <CarOutlined style={{ color: "#722ed1", marginRight: 8 }} />
-          Terminar Ingreso
-        </span>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16, width: '100%' }}>
+          <span style={{ display: 'flex', alignItems: 'center', fontWeight: 500, fontSize: 18 }}>
+            <CarOutlined style={{ color: "#722ed1", marginRight: 8 }} />
+            Terminar Ingreso
+          </span>
+          <Button
+            type="primary"
+            icon={<PrinterOutlined />}
+            onClick={handlePrintBoleta}
+            style={{ background: "#722ed1", borderColor: "#722ed1" }}
+          >
+            Imprimir Nota
+          </Button>
+        </div>
       }
       width={500}
     >

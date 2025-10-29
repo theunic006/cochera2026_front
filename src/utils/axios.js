@@ -3,8 +3,7 @@ import axios from 'axios';
 
 // Instancia pública sin interceptores de autenticación
 export const axiosPublicInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api',
-  //baseURL: import.meta.env.VITE_API_BASE_URL || 'https://api.garage-peru.shop/api',
+  baseURL: import.meta.env.VITE_API_BASE_URL,
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
@@ -14,8 +13,7 @@ export const axiosPublicInstance = axios.create({
 
 // Usar variable de entorno para la URL base
 const axiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'https://127.0.0.1:8000/api',
-  //baseURL: import.meta.env.VITE_API_BASE_URL || 'https://api.garage-peru.shop/api',
+  baseURL: import.meta.env.VITE_API_BASE_URL,
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',

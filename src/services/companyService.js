@@ -67,6 +67,10 @@ export const companyService = {
    * @param {string} companyData.ubicacion - Ubicación de la empresa (opcional)
    * @param {string} companyData.descripcion - Descripción de la empresa (opcional)
    * @param {string} companyData.estado - Estado de la empresa: 'activo' o 'suspendido' (opcional)
+   * @param {string} companyData.ngrok - para configurar token de impresora local (opcional)
+   * @param {string} companyData.ruc - para configurar token de impresora local (opcional)
+   * @param {string} companyData.token - para configurar token de impresora local (opcional)
+   * 
    * @returns {Promise} Respuesta de la API
    */
   async updateCompany(id, companyData) {
@@ -204,6 +208,7 @@ export const companyService = {
    * @param {Object} printerConfig - Configuración de impresoras
    * @param {string} printerConfig.imp_input - Impresora de entrada
    * @param {string} printerConfig.imp_output - Impresora de salida
+   * @param {string} printerConfig.ngrok - Token de ngrok para impresión local
    * @returns {Promise} Respuesta de la API
    */
   async updatePrinters(id, printerConfig) {

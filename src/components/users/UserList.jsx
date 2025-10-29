@@ -19,10 +19,12 @@ import {
   DeleteOutlined, 
   TeamOutlined,
   ReloadOutlined,
-  ExclamationCircleOutlined
+  ExclamationCircleOutlined,
+  SafetyOutlined
 } from '@ant-design/icons';
 import { userService } from '../../services/userService';
 import UserForm from './UserForm';
+import PermissionsModal from './PermissionsModal';
 import AppLayout from '../AppLayout';
 import TableBase from '../common/TableBase';
 
@@ -42,6 +44,10 @@ const UserList = () => {
   // Estados para modales
   const [userFormVisible, setUserFormVisible] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
+  
+  // Estados para permisos
+  const [permissionsModalVisible, setPermissionsModalVisible] = useState(false);
+  const [selectedUserForPermissions, setSelectedUserForPermissions] = useState(null);
   
   // Estados para responsividad
   const [isMobile, setIsMobile] = useState(false);
@@ -164,6 +170,14 @@ const UserList = () => {
     loadUsers(pagination.current, pagination.pageSize);
   };
 
+  /**
+   * Abrir modal de permisos
+   */
+  const handleOpenPermissions = (user) => {
+    setSelectedUserForPermissions(user);
+    setPermissionsModalVisible(true);
+  };
+
   // Configuración de columnas de la tabla
   const columns = [
     {
@@ -249,9 +263,17 @@ const UserList = () => {
     {
       title: 'Acciones',
       key: 'actions',
-      width: 120,
+      width: 150,
       render: (_, record) => (
         <Space size="small">
+          <Tooltip title="Permisos">
+            <Button
+              type="text"
+              icon={<SafetyOutlined />}
+              onClick={() => handleOpenPermissions(record)}
+              style={{ color: '#722ed1' }}
+            />
+          </Tooltip>
           <Tooltip title="Editar">
             <Button
               type="text"
@@ -380,6 +402,16 @@ const UserList = () => {
           }}
           onSuccess={handleFormSuccess}
           editingUser={editingUser}
+        />
+
+        {/* Modal de permisos */}
+        <PermissionsModal
+          visible={permissionsModalVisible}
+          onCancel={() => {
+            setPermissionsModalVisible(false);
+            setSelectedUserForPermissions(null);
+          }}
+          selectedUser={selectedUserForPermissions}
         />
       </div>
     </AppLayout>

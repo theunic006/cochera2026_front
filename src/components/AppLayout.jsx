@@ -27,6 +27,7 @@ import { useAuth } from '../context/AuthContext';
 import { useAuthInfo } from '../hooks/useAuthInfo';
 import { useTheme } from '../context/ThemeContext';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { permissionService } from '../services/permissionService';
 
 const { Header, Sider, Content } = Layout;
 const { Text } = Typography;
@@ -35,6 +36,7 @@ const AppLayout = ({ children }) => {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [userPermissions, setUserPermissions] = useState([]);
   const { user, logout } = useAuth();
   const { userInfo } = useAuthInfo();
   const { isDarkMode, toggleTheme } = useTheme();
@@ -53,6 +55,48 @@ const AppLayout = ({ children }) => {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
+  // Cargar permisos del usuario
+  useEffect(() => {
+    const loadUserPermissions = async () => {
+      if (user?.id) {
+        try {
+          const response = await permissionService.getUserPermissions(user.id);
+          if (response.success) {
+            let permsData = response.data;
+            
+            // Manejar diferentes estructuras de respuesta
+            if (permsData && typeof permsData === 'object' && !Array.isArray(permsData)) {
+              const possibleArrayKeys = ['permissions', 'data', 'items'];
+              for (const key of possibleArrayKeys) {
+                if (Array.isArray(permsData[key])) {
+                  permsData = permsData[key];
+                  break;
+                }
+              }
+            }
+            
+            const permsArray = Array.isArray(permsData) ? permsData : [];
+            const permissionSlugs = permsArray.map(p => p.slug || p);
+            setUserPermissions(permissionSlugs);
+          }
+        } catch (error) {
+          console.error('Error al cargar permisos:', error);
+          setUserPermissions([]);
+        }
+      }
+    };
+
+    loadUserPermissions();
+  }, [user]);
+
+  // Función para verificar si el usuario tiene un permiso
+  const hasPermission = (permissionSlug) => {
+    // SUPERUSUARIO (idrol === 1) tiene todos los permisos
+    if (userInfo?.idrol === 1) return true;
+    // Verificar si el usuario tiene el permiso específico
+    return userPermissions.includes(permissionSlug);
+  };
+
   // Función para manejar navegación en móvil
   const handleMobileNavigation = (path) => {
     navigate(path);
@@ -62,96 +106,107 @@ const AppLayout = ({ children }) => {
   };
 
   // Mostrar solo 'Empresas' si el usuario es SUPERUSUARIO (idrol === 1)
-  // Menú base sin 'Empresas'
-  const menuItems = [
+  // Menú base con permisos
+  const allMenuItems = [
     {
       key: '/dashboard',
       icon: <DashboardOutlined />,
       label: 'Dashboard',
       onClick: () => handleMobileNavigation('/dashboard'),
+      permission: 'dashboard.view',
     },
     {
       key: '/usuarios',
       icon: <TeamOutlined />,
       label: 'Usuarios',
       onClick: () => handleMobileNavigation('/usuarios'),
+      permission: 'users.view',
     },
     {
       key: '/roles',
       icon: <SecurityScanOutlined />,
       label: 'Roles',
       onClick: () => handleMobileNavigation('/roles'),
+      permission: 'roles.view',
     },
     {
       key: '/registros',
       icon: <FileTextOutlined />,
       label: 'Registros',
       onClick: () => handleMobileNavigation('/registros'),
+      permission: 'registros.view',
     },
     {
       key: '/ingresos',
       icon: <DollarOutlined />,
       label: 'Ingresos',
       onClick: () => handleMobileNavigation('/ingresos'),
+      permission: 'ingresos.view',
     },
     {
       key: '/tolerancias',
       icon: <FieldTimeOutlined />,
       label: 'Tolerancias',
       onClick: () => handleMobileNavigation('/tolerancias'),
+      permission: 'tolerancias.view',
     },
     {
       key: '/tipos-vehiculo',
       icon: <TagOutlined />,
       label: 'Tipos de Vehículo',
       onClick: () => handleMobileNavigation('/tipos-vehiculo'),
+      permission: 'tipos-vehiculo.view',
     },
     {
       key: '/vehiculos',
       icon: <CarOutlined />,
       label: 'Vehículos',
       onClick: () => handleMobileNavigation('/vehiculos'),
+      permission: 'vehiculos.view',
     },
     {
       key: '/reportes',
       icon: <BarChartOutlined />,
       label: 'Reportes',
       onClick: () => handleMobileNavigation('/reportes'),
+      permission: 'reportes.view',
     },
     {
       key: '/salidas',
       icon: <FieldTimeOutlined />,
       label: 'Salidas',
       onClick: () => handleMobileNavigation('/salidas'),
+      permission: 'salidas.view',
     },
     {
       key: '/observaciones',
       icon: <FileTextOutlined />,
       label: 'Observaciones',
       onClick: () => handleMobileNavigation('/observaciones'),
-    },
-    {
-      key:'/prueba-impresion',
-      icon: <CreditCardOutlined />,
-      label: 'Prueba de Impresión',
-      onClick: () => handleMobileNavigation('/prueba-impresion'), 
-    },
-    {
-      key:'/prueba-parzibyte',
-      icon: <PrinterOutlined />,
-      label: 'API Parzibyte',
-      onClick: () => handleMobileNavigation('/prueba-parzibyte'), 
+      permission: 'observaciones.view',
     }
   ];
+
   // Solo SUPERUSUARIO (idrol === 1) puede ver 'Empresas'
   if (userInfo?.idrol === 1) {
-    menuItems.splice(11, 0, {
+    allMenuItems.splice(11, 0, {
       key: '/empresas',
       icon: <BankOutlined />,
       label: 'Empresas',
       onClick: () => handleMobileNavigation('/empresas'),
+      permission: null, // Sin permiso específico, solo para SUPERUSUARIO
     });
   }
+
+  // Filtrar items del menú según permisos del usuario
+  const menuItems = allMenuItems.filter(item => {
+    // Si no tiene permiso específico (como Empresas), mostrar solo para SUPERUSUARIO
+    if (!item.permission) {
+      return userInfo?.idrol === 1;
+    }
+    // Verificar si tiene el permiso requerido
+    return hasPermission(item.permission);
+  });
 
   // Items del dropdown del usuario
   const userMenuItems = [

@@ -16,7 +16,7 @@ const { Option } = Select;
 
 const IngresoMobile = () => {
   const [searchText, setSearchText] = useState("");
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const { isDarkMode } = useTheme();
   const navigate = useNavigate();
   const [toleranciaMinutos, setToleranciaMinutos] = useState(null);
@@ -378,7 +378,7 @@ const IngresoMobile = () => {
             <Button
               type="text"
               icon={<ArrowLeftOutlined />}
-              onClick={() => navigate('/ingresos')}
+              onClick={() => navigate('/dashboard')}
               className={getThemeClass('header-back-button')}
             >
               Volver
@@ -469,18 +469,41 @@ const IngresoMobile = () => {
                   message.error("No se encontró el ingreso para imprimir");
                   return;
                 }
+                if (!token) {
+                  message.error("No se encontró el token de autenticación");
+                  return;
+                }
+                message.loading({ content: "Enviando a impresora...", key: "print" });
                 try {
-                  message.loading("Enviando a la impresora...", 0);
-                  const { default: apiClient } = await import('../../utils/apiClient');
-                  const response = await apiClient.get(`/ingresos/${ingresoSeleccionado.id}/print`);
-                  message.destroy();
-                  if (response.status === 200) {
-                    message.success("Ticket enviado a la impresora correctamente");
+                  //const url = `https://semisynthetic-monophonic-bryce.ngrok-free.dev/servlocal/api/ingresos/178/print?token=142|klfWFJT4PI6LlGZfRFGDYmXowKRsNMF6JPwpgYc6bdf4d64e`;
+                  const url = `https://semisynthetic-monophonic-bryce.ngrok-free.dev/servlocal/api/ingresos/${ingresoSeleccionado.id}/print?token=${token}`;
+                  const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                      'ngrok-skip-browser-warning': 'true',
+                      'Accept': 'application/json',
+                      'Content-Type': 'application/json'
+                    }
+                  });
+                  const contentType = response.headers.get("content-type");
+                  let data;
+                  if (contentType && contentType.includes("application/json")) {
+                    data = await response.json();
                   } else {
-                    message.error("Error al imprimir el ticket");
+                    const text = await response.text();
+                    console.log('Respuesta HTML recibida:', text.slice(0, 200));
+                    message.destroy("print");
+                    message.error("Respuesta inesperada del servidor: " + text.slice(0, 100));
+                    return;
+                  }
+                  message.destroy("print");
+                  if (data.success) {
+                    message.success("Ticket enviado a impresión");
+                  } else {
+                    message.error(data.message || "Error al imprimir el ticket");
                   }
                 } catch (error) {
-                  message.destroy();
+                  message.destroy("print");
                   message.error(`Error al imprimir: ${error.message}`);
                 }
               }}

@@ -38,24 +38,48 @@ const EditarForm = ({
     form.setFieldsValue({ observaciones: descripcion });
   };
 
-  // Imprimir ticket usando solo el endpoint GET
+  // Imprimir ticket usando el endpoint local vía ngrok
   const handlePrintTicket = async () => {
     if (!ingresoEdit?.id) {
       message.error("No se encontró el ingreso para imprimir");
       return;
     }
+    if (!token) {
+      message.error("No se encontró el token de autenticación");
+      return;
+    }
+    message.loading({ content: "Enviando a impresora...", key: "print" });
     try {
-      // Usar apiClient para la petición
-      const { default: apiClient } = await import('../../utils/apiClient');
-      const response = await apiClient.get(`/ingresos/${ingresoEdit.id}/print`);
-      message.destroy();
-      if (response.status === 200) {
-       
+      // Usar la URL de ngrok directamente con valores dinámicos
+        //const url = `https://semisynthetic-monophonic-bryce.ngrok-free.dev/servlocal/api/ingresos/178/print?token=142|klfWFJT4PI6LlGZfRFGDYmXowKRsNMF6JPwpgYc6bdf4d64e`;
+        const url = `https://semisynthetic-monophonic-bryce.ngrok-free.dev/servlocal/api/ingresos/${ingresoEdit.id}/print?token=${token}`;
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'ngrok-skip-browser-warning': 'true',
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
+      });
+      const contentType = response.headers.get("content-type");
+      let data;
+      if (contentType && contentType.includes("application/json")) {
+        data = await response.json();
       } else {
-        message.error("Error al imprimir el ticket");
+        const text = await response.text();
+        console.log('Respuesta HTML recibida:', text.slice(0, 200)); // Para debug
+        message.destroy("print");
+        message.error("Respuesta inesperada del servidor: " + text.slice(0, 100));
+        return;
+      }
+      message.destroy("print");
+      if (data.success) {
+        message.success("Ticket enviado a impresión");
+      } else {
+        message.error(data.message || "Error al imprimir el ticket");
       }
     } catch (error) {
-      message.destroy();
+      message.destroy("print");
       message.error(`Error al imprimir: ${error.message}`);
     }
   };
