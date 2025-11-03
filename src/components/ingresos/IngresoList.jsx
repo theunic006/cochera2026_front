@@ -360,7 +360,14 @@ const IngresoList = () => {
       key: 'terminar',
       render: (_, record) => (
         <Tooltip title="Terminar ingreso">
-          <Button type="primary" icon={<CheckCircleOutlined />} danger onClick={() => handleTerminar(record)}>
+          <Button
+            type="primary"
+            icon={<CheckCircleOutlined />}
+            danger
+            onClick={() => {
+              handleTerminar(record);
+            }}
+          >
             Terminar
           </Button>
         </Tooltip>

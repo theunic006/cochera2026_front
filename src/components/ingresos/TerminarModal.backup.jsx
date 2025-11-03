@@ -1,27 +1,25 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { Modal, Button, Descriptions, message } from "antd";
-import { CarOutlined, ClockCircleOutlined, TagOutlined, CreditCardOutlined } from "@ant-design/icons";
-
-import { useAuth } from '../../context/AuthContext';
 import { toleranceService } from '../../services/toleranceService';
-import { ingresoService } from '../../services/ingresoService';
+import { useAuth } from '../../context/AuthContext';
 import { calcularTiempoEstadiaConTolerancia, getTiempoEstadia } from '../../utils/CalValores';
-import { enviarFacturaSunat, determinarTipoComprobante } from './enviarFactura';
-import { imprimirTicketSunat } from './imprimirTicketSunat';
+import React from "react";
+import { Modal, Button, Descriptions, Input, message } from "antd";
+import { CarOutlined, ClockCircleOutlined, TagOutlined, CreditCardOutlined } from "@ant-design/icons";
+import { ingresoService } from '../../services/ingresoService';
 import ConsultaSunat from './consultaSunat';
+import { imprimirTicketSunat } from './imprimirTicketSunat';
+import { enviarFacturaSunat, determinarTipoComprobante } from './enviarFactura';
 
 
 const TerminarModal = ({ visible, onCancel, ingreso, onPagoEfectivo, onPagoYape, onPagoTarjeta }) => {
   const { user } = useAuth();
-  const [toleranciaMinutos, setToleranciaMinutos] = useState(null);
-  const [rucCliente, setRucCliente] = useState('');
-  const [razonSocial, setRazonSocial] = useState('');
-  const [direccion, setDireccion] = useState('');
-  const [mostrarCamposAdicionales, setMostrarCamposAdicionales] = useState(false);
-  const [enviandoSunat, setEnviandoSunat] = useState(false);
+  const [toleranciaMinutos, setToleranciaMinutos] = React.useState(null);
+  const [rucCliente, setRucCliente] = React.useState('');
+  const [razonSocial, setRazonSocial] = React.useState('');
+  const [direccion, setDireccion] = React.useState('');
+  const [mostrarCamposAdicionales, setMostrarCamposAdicionales] = React.useState(false);
+  const [enviandoSunat, setEnviandoSunat] = React.useState(false);
   
-  // Obtener tolerancia de la empresa
-  useEffect(() => {
+  React.useEffect(() => {
     const fetchTolerancia = async () => {
       if (user && user.id_company) {
         try {
@@ -39,8 +37,7 @@ const TerminarModal = ({ visible, onCancel, ingreso, onPagoEfectivo, onPagoYape,
     fetchTolerancia();
   }, [user]);
 
-  // Cargar datos del cliente cuando se abre el modal
-  useEffect(() => {
+  React.useEffect(() => {
     if (visible && ingreso) {
       const propietarios = ingreso.vehiculo?.propietarios;
       const persona = ingreso.vehiculo?.persona;
@@ -73,60 +70,40 @@ const TerminarModal = ({ visible, onCancel, ingreso, onPagoEfectivo, onPagoYape,
     }
   }, [visible, ingreso]);
 
-  // Calcular valores derivados con useMemo para evitar recálculos innecesarios
-  const datosCalculados = useMemo(() => {
-    if (!ingreso) return null;
-    
-    const vehiculo = ingreso.vehiculo || {};
-    const tipoVehiculo = vehiculo.tipo_vehiculo || {};
-    const tiempoObj = calcularTiempoEstadiaConTolerancia(ingreso.fecha_ingreso, ingreso.hora_ingreso, toleranciaMinutos);
-    const tiempo = tiempoObj.texto;
-    const precioHora = tipoVehiculo.valor || 0;
-    const fracciones = tiempoObj.fracciones;
-    const total = precioHora * (fracciones > 0 ? fracciones : 1);
-    const horaSalida = new Date().toLocaleTimeString("es-PE", { hour12: false });
-    
-    return { vehiculo, tipoVehiculo, tiempo, precioHora, total, horaSalida };
-  }, [ingreso, toleranciaMinutos]);
 
-  // Handler para registrar pago
-  const handlePago = useCallback(async (tipo_pago) => {
-    if (!ingreso || !datosCalculados) return;
-    
-    // ⚠️ FIX: getTiempoEstadia necesita fecha y hora como parámetros separados
-    const tiempoEstadia = getTiempoEstadia(ingreso.fecha_ingreso, ingreso.hora_ingreso);
-    const precio = datosCalculados.total;
+  if (!ingreso) return null;
+  const vehiculo = ingreso.vehiculo || {};
+  const tipoVehiculo = vehiculo.tipo_vehiculo || {};
+  const tiempoObj = calcularTiempoEstadiaConTolerancia(ingreso.fecha_ingreso, ingreso.hora_ingreso, toleranciaMinutos);
+  const tiempo = tiempoObj.texto;
+  const precioHora = tipoVehiculo.valor || 0;
+  const fracciones = tiempoObj.fracciones;
+  const total = precioHora * (fracciones > 0 ? fracciones : 1);
+  const horaSalida = new Date().toLocaleTimeString("es-PE", { hour12: false });
 
+
+  const handlePago = async (tipo_pago) => {
+    const tiempoEstadia = getTiempoEstadia(ingreso);
+    const precio = total;
     try {
       const res = await ingresoService.deleteIngreso(ingreso.id, {
         tiempo: tiempoEstadia,
         precio,
         tipo_pago: tipo_pago.toUpperCase(),
       });
-      
       if (res.success) {
-        message.success(`Pago registrado exitosamente: ${tipo_pago}`);
-        
-        // Llamar callbacks según tipo de pago
         if (tipo_pago === 'Efectivo' && onPagoEfectivo) onPagoEfectivo();
         if (tipo_pago === 'Yape' && onPagoYape) onPagoYape();
         if (tipo_pago === 'Tarjeta' && onPagoTarjeta) onPagoTarjeta();
-        
-        // Cerrar modal después de éxito
-        onCancel();
       } else {
-        message.error(res.message || 'Error al registrar pago');
+        window?.message?.error?.(res.message || 'Error al registrar pago');
       }
     } catch (err) {
-      message.error('Error al registrar pago');
-      console.error('Error en handlePago:', err);
+      window?.message?.error?.('Error al registrar pago');
     }
-  }, [ingreso, datosCalculados, onPagoEfectivo, onPagoYape, onPagoTarjeta, onCancel]);
+  };
 
-  // Handler para enviar a SUNAT
-  const handleEnviarSunat = useCallback(async () => {
-    if (!datosCalculados) return;
-    
+  const handleEnviarSunat = async () => {
     // Validar que existan los datos del cliente
     if (!rucCliente || !razonSocial) {
       message.warning('Debe completar los datos del cliente (RUC/DNI y Razón Social) antes de enviar a SUNAT');
@@ -141,21 +118,21 @@ const TerminarModal = ({ visible, onCancel, ingreso, onPagoEfectivo, onPagoYape,
       // Determinar tipo de comprobante según el documento
       const tipoComprobante = determinarTipoComprobante(rucCliente);
 
-      // Preparar datos para enviar
+      // Preparar datos para enviar (INCLUYE idEmpresa para consultar series en BD)
       const datosComprobante = {
-        tipoComprobante,
-        rucCliente,
-        razonSocial,
+        tipoComprobante: tipoComprobante,
+        rucCliente: rucCliente,
+        razonSocial: razonSocial,
         direccion: direccion || '-',
-        placa: datosCalculados.vehiculo.placa || 'SIN PLACA',
+        placa: vehiculo.placa || 'SIN PLACA',
         horaIngreso: ingreso.hora_ingreso || '',
-        totalPagar: datosCalculados.total,
-        idEmpresa: user?.id_company || user?.company?.id || 1
+        totalPagar: total,
+        idEmpresa: user?.id_company || user?.company?.id || 1 // ID de empresa para consultar series
       };
 
       console.log('📋 Enviando comprobante a SUNAT:', datosComprobante);
 
-      // Enviar a SUNAT
+      // Enviar a SUNAT (primero consultará BD para obtener serie/número)
       const resultado = await enviarFacturaSunat(datosComprobante);
 
       message.destroy();
@@ -164,7 +141,7 @@ const TerminarModal = ({ visible, onCancel, ingreso, onPagoEfectivo, onPagoYape,
         message.success(`${tipoComprobante === 'factura' ? 'Factura' : 'Boleta'} enviada exitosamente a SUNAT`);
         console.log('✅ Respuesta SUNAT completa:', resultado);
         
-        // Imprimir ticket automáticamente
+        // IMPRIMIR TICKET AUTOMÁTICAMENTE después de envío exitoso
         setTimeout(() => {
           console.log('🖨️ Iniciando impresión de ticket SUNAT...');
           imprimirTicketSunat({
@@ -172,8 +149,8 @@ const TerminarModal = ({ visible, onCancel, ingreso, onPagoEfectivo, onPagoYape,
             datosEmpresa: user?.company || {},
             datosCliente: {
               documento: rucCliente,
-              razonSocial,
-              direccion
+              razonSocial: razonSocial,
+              direccion: direccion
             }
           });
         }, 500);
@@ -188,12 +165,7 @@ const TerminarModal = ({ visible, onCancel, ingreso, onPagoEfectivo, onPagoYape,
     } finally {
       setEnviandoSunat(false);
     }
-  }, [datosCalculados, rucCliente, razonSocial, direccion, ingreso, user]);
-
-  // Early return si no hay datos calculados
-  if (!datosCalculados) return null;
-
-  const { vehiculo, tipoVehiculo, tiempo, precioHora, total, horaSalida } = datosCalculados;
+  };
 
   return (
     <Modal
@@ -206,6 +178,7 @@ const TerminarModal = ({ visible, onCancel, ingreso, onPagoEfectivo, onPagoYape,
           <span style={{ fontWeight: 500, fontSize: 18 }}>
             Terminar Ingreso
           </span>
+          {/* Botón + al lado derecho de "Ingreso" */}
           <Button
             type="primary"
             size="small"
@@ -221,7 +194,7 @@ const TerminarModal = ({ visible, onCancel, ingreso, onPagoEfectivo, onPagoYape,
       }
       width={500}
     >
-      {/* Formulario de datos del cliente */}
+      {/* Campos adicionales - siempre visibles si se hace clic en + */}
       {mostrarCamposAdicionales && (
         <ConsultaSunat
           rucCliente={rucCliente}
@@ -251,14 +224,14 @@ const TerminarModal = ({ visible, onCancel, ingreso, onPagoEfectivo, onPagoYape,
           <ClockCircleOutlined /> {tiempo}
         </Descriptions.Item>
         <Descriptions.Item label="Precio por Hora">
-          S/ {precioHora.toFixed(2)}
+          S/ {precioHora}.00
         </Descriptions.Item>
         <Descriptions.Item label="Tipo de Vehículo">
           <TagOutlined /> {tipoVehiculo.nombre || "-"}
         </Descriptions.Item>
         <Descriptions.Item label="Total a Pagar">
           <span style={{ color: "#ffc53d", fontWeight: 700, fontSize: 20 }}>
-            S/ {total.toFixed(2)}
+            S/ {total}.00
           </span>
         </Descriptions.Item>
       </Descriptions>
