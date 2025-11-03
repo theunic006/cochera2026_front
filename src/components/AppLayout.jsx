@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo, memo } from 'react';
 import { Layout, Menu, Button, Avatar, Dropdown, Space, Typography, Badge, Switch, Drawer } from 'antd';
 import { STORAGE_BASE_URL } from '../utils/apiClient';
 import {
@@ -23,11 +23,31 @@ import {
   DollarOutlined,
   PrinterOutlined,
 } from '@ant-design/icons';
-import { useAuth } from '../context/AuthContext';
-import { useAuthInfo } from '../hooks/useAuthInfo';
-import { useTheme } from '../context/ThemeContext';
+// ✅ FASE 3: Path aliases + Zustand
+import { useAuth } from '@stores/authStore';
+import { useAuthInfo } from '@hooks/useAuthInfo';
+import { useTheme } from '@stores/themeStore';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { permissionService } from '../services/permissionService';
+import { preloadRoute } from '../utils/preloadRoutes';
+
+// ✅ OPTIMIZACIÓN: Definir importaciones para preload anticipado
+const routeImports = {
+  '/dashboard': () => import('../features/dashboard').then(m => ({ default: m.Dashboard })),
+  '/usuarios': () => import('../features/usuarios').then(m => ({ default: m.UserList })),
+  '/roles': () => import('../features/roles'),
+    '/companies': () => import('../features/empresas'),
+  '/registros': () => import('../features/registros'),
+  '/ingresos': () => import('../features/ingresos').then(m => ({ default: m.IngresoList })),
+  // ✅ MIGRADO A FEATURES: Tolerancias ahora usa arquitectura modular
+  '/tolerancias': () => import('../features/configuracion/tolerancias').then(m => ({ default: m.ToleranceList })),
+  '/tipos-vehiculo': () => import('../features/vehicleTypes').then(m => ({ default: m.VehicleTypeListSimple })),
+  '/vehiculos': () => import('../features/vehiculos').then(m => ({ default: m.VehicleListSimple })),
+    '/owners': () => import('../features/propietarios'),
+  '/reportes': () => import('../features/reportes'),
+  '/salidas': () => import('../features/salidas'),
+  '/observaciones': () => import('../features/observaciones').then(m => ({ default: m.ObservacionesList })),
+};
 
 const { Header, Sider, Content } = Layout;
 const { Text } = Typography;
@@ -43,76 +63,88 @@ const AppLayout = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Detectar si estamos en dispositivo móvil
+  // ✅ OPTIMIZACIÓN: useCallback - Detectar si estamos en dispositivo móvil
+  const checkMobile = useCallback(() => {
+    setIsMobile(window.innerWidth <= 768);
+  }, []);
+
   useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth <= 768);
-    };
-    
     checkMobile();
     window.addEventListener('resize', checkMobile);
     
     return () => window.removeEventListener('resize', checkMobile);
-  }, []);
+  }, [checkMobile]);
 
-  // Cargar permisos del usuario
-  useEffect(() => {
-    const loadUserPermissions = async () => {
-      if (user?.id) {
-        try {
-          const response = await permissionService.getUserPermissions(user.id);
-          if (response.success) {
-            let permsData = response.data;
-            
-            // Manejar diferentes estructuras de respuesta
-            if (permsData && typeof permsData === 'object' && !Array.isArray(permsData)) {
-              const possibleArrayKeys = ['permissions', 'data', 'items'];
-              for (const key of possibleArrayKeys) {
-                if (Array.isArray(permsData[key])) {
-                  permsData = permsData[key];
-                  break;
-                }
+  // ✅ OPTIMIZACIÓN: useCallback - Cargar permisos del usuario
+  const loadUserPermissions = useCallback(async () => {
+    if (user?.id) {
+      try {
+        const response = await permissionService.getUserPermissions(user.id);
+        if (response.success) {
+          let permsData = response.data;
+          
+          // Manejar diferentes estructuras de respuesta
+          if (permsData && typeof permsData === 'object' && !Array.isArray(permsData)) {
+            const possibleArrayKeys = ['permissions', 'data', 'items'];
+            for (const key of possibleArrayKeys) {
+              if (Array.isArray(permsData[key])) {
+                permsData = permsData[key];
+                break;
               }
             }
-            
-            const permsArray = Array.isArray(permsData) ? permsData : [];
-            const permissionSlugs = permsArray.map(p => p.slug || p);
-            setUserPermissions(permissionSlugs);
           }
-        } catch (error) {
-          console.error('Error al cargar permisos:', error);
-          setUserPermissions([]);
+          
+          const permsArray = Array.isArray(permsData) ? permsData : [];
+          const permissionSlugs = permsArray.map(p => p.slug || p);
+          setUserPermissions(permissionSlugs);
         }
+      } catch (error) {
+        console.error('Error al cargar permisos:', error);
+        setUserPermissions([]);
       }
-    };
+    }
+  }, [user?.id]);
 
+  useEffect(() => {
     loadUserPermissions();
-  }, [user]);
+  }, [loadUserPermissions]);
 
-  // Función para verificar si el usuario tiene un permiso
-  const hasPermission = (permissionSlug) => {
+  // ✅ OPTIMIZACIÓN: useCallback - Verificar permisos
+  const hasPermission = useCallback((permissionSlug) => {
     // SUPERUSUARIO (idrol === 1) tiene todos los permisos
     if (userInfo?.idrol === 1) return true;
     // Verificar si el usuario tiene el permiso específico
     return userPermissions.includes(permissionSlug);
-  };
+  }, [userInfo?.idrol, userPermissions]);
 
-  // Función para manejar navegación en móvil
-  const handleMobileNavigation = (path) => {
+  // ✅ OPTIMIZACIÓN: useCallback - Manejar navegación con preload
+  const handleMobileNavigation = useCallback((path) => {
     navigate(path);
     if (isMobile) {
       setMobileMenuOpen(false);
     }
-  };
+  }, [navigate, isMobile]);
 
-  // Mostrar solo 'Empresas' si el usuario es SUPERUSUARIO (idrol === 1)
-  // Menú base con permisos
-  const allMenuItems = [
+  // ✅ OPTIMIZACIÓN: useCallback - Precargar ruta al hacer hover
+  const handleMenuHover = useCallback((path) => {
+    const importFn = routeImports[path];
+    if (importFn) {
+      // Precargar el componente de forma silenciosa
+      preloadRoute(importFn, path).catch(err => {
+        console.warn(`Error precargando ${path}:`, err);
+      });
+    }
+  }, []);
+
+  // ✅ OPTIMIZACIÓN: useMemo - Menu items con preload en hover
+  // IMPORTANTE: Incluir userInfo en dependencias para recalcular cuando cambia el usuario
+  const allMenuItems = useMemo(() => [
     {
       key: '/dashboard',
       icon: <DashboardOutlined />,
       label: 'Dashboard',
       onClick: () => handleMobileNavigation('/dashboard'),
+      onMouseEnter: () => handleMenuHover('/dashboard'),
       permission: 'dashboard.view',
     },
     {
@@ -120,6 +152,7 @@ const AppLayout = ({ children }) => {
       icon: <TeamOutlined />,
       label: 'Usuarios',
       onClick: () => handleMobileNavigation('/usuarios'),
+      onMouseEnter: () => handleMenuHover('/usuarios'),
       permission: 'users.view',
     },
     {
@@ -127,6 +160,7 @@ const AppLayout = ({ children }) => {
       icon: <SecurityScanOutlined />,
       label: 'Roles',
       onClick: () => handleMobileNavigation('/roles'),
+      onMouseEnter: () => handleMenuHover('/roles'),
       permission: 'roles.view',
     },
     {
@@ -134,6 +168,7 @@ const AppLayout = ({ children }) => {
       icon: <FileTextOutlined />,
       label: 'Registros',
       onClick: () => handleMobileNavigation('/registros'),
+      onMouseEnter: () => handleMenuHover('/registros'),
       permission: 'registros.view',
     },
     {
@@ -141,6 +176,7 @@ const AppLayout = ({ children }) => {
       icon: <DollarOutlined />,
       label: 'Ingresos',
       onClick: () => handleMobileNavigation('/ingresos'),
+      onMouseEnter: () => handleMenuHover('/ingresos'),
       permission: 'ingresos.view',
     },
     {
@@ -148,6 +184,7 @@ const AppLayout = ({ children }) => {
       icon: <FieldTimeOutlined />,
       label: 'Tolerancias',
       onClick: () => handleMobileNavigation('/tolerancias'),
+      onMouseEnter: () => handleMenuHover('/tolerancias'),
       permission: 'tolerancias.view',
     },
     {
@@ -155,6 +192,7 @@ const AppLayout = ({ children }) => {
       icon: <TagOutlined />,
       label: 'Tipos de Vehículo',
       onClick: () => handleMobileNavigation('/tipos-vehiculo'),
+      onMouseEnter: () => handleMenuHover('/tipos-vehiculo'),
       permission: 'tipos-vehiculo.view',
     },
     {
@@ -162,6 +200,7 @@ const AppLayout = ({ children }) => {
       icon: <CarOutlined />,
       label: 'Vehículos',
       onClick: () => handleMobileNavigation('/vehiculos'),
+      onMouseEnter: () => handleMenuHover('/vehiculos'),
       permission: 'vehiculos.view',
     },
     {
@@ -169,6 +208,7 @@ const AppLayout = ({ children }) => {
       icon: <BarChartOutlined />,
       label: 'Reportes',
       onClick: () => handleMobileNavigation('/reportes'),
+      onMouseEnter: () => handleMenuHover('/reportes'),
       permission: 'reportes.view',
     },
     {
@@ -176,6 +216,7 @@ const AppLayout = ({ children }) => {
       icon: <FieldTimeOutlined />,
       label: 'Salidas',
       onClick: () => handleMobileNavigation('/salidas'),
+      onMouseEnter: () => handleMenuHover('/salidas'),
       permission: 'salidas.view',
     },
     {
@@ -183,38 +224,58 @@ const AppLayout = ({ children }) => {
       icon: <FileTextOutlined />,
       label: 'Observaciones',
       onClick: () => handleMobileNavigation('/observaciones'),
+      onMouseEnter: () => handleMenuHover('/observaciones'),
       permission: 'observaciones.view',
     }
-  ];
+  ], [handleMobileNavigation, handleMenuHover, userInfo]);
 
-  // Solo SUPERUSUARIO (idrol === 1) puede ver 'Empresas'
-  if (userInfo?.idrol === 1) {
-    allMenuItems.splice(11, 0, {
-      key: '/empresas',
-      icon: <BankOutlined />,
-      label: 'Empresas',
-      onClick: () => handleMobileNavigation('/empresas'),
-      permission: null, // Sin permiso específico, solo para SUPERUSUARIO
-    });
-  }
-
-  // Filtrar items del menú según permisos del usuario
-  const menuItems = allMenuItems.filter(item => {
-    // Si no tiene permiso específico (como Empresas), mostrar solo para SUPERUSUARIO
-    if (!item.permission) {
-      return userInfo?.idrol === 1;
+  // ✅ OPTIMIZACIÓN: useMemo - All menu items con empresas incluido
+  const allMenuItemsWithCompany = useMemo(() => {
+    const items = [...allMenuItems];
+    // Solo SUPERUSUARIO (idrol === 1) puede ver 'Empresas'
+    if (userInfo?.idrol === 1) {
+      items.splice(11, 0, {
+        key: '/empresas',
+        icon: <BankOutlined />,
+        label: 'Empresas',
+        onClick: () => handleMobileNavigation('/empresas'),
+        onMouseEnter: () => handleMenuHover('/empresas'),
+        permission: null, // Sin permiso específico, solo para SUPERUSUARIO
+      });
     }
-    // Verificar si tiene el permiso requerido
-    return hasPermission(item.permission);
-  });
+    return items;
+  }, [allMenuItems, userInfo?.idrol, handleMobileNavigation, handleMenuHover]);
 
-  // Items del dropdown del usuario
-  const userMenuItems = [
+  // ✅ OPTIMIZACIÓN: useMemo - Filtrar items del menú según permisos
+  // IMPORTANTE: Incluir userPermissions para recalcular cuando cambien los permisos
+  const menuItems = useMemo(() => {
+    return allMenuItemsWithCompany.filter(item => {
+      // Si no tiene permiso específico (como Empresas), mostrar solo para SUPERUSUARIO
+      if (!item.permission) {
+        return userInfo?.idrol === 1;
+      }
+      // Verificar si tiene el permiso requerido
+      return hasPermission(item.permission);
+    });
+  }, [allMenuItemsWithCompany, userInfo?.idrol, hasPermission, userPermissions]);
+
+  // ✅ OPTIMIZACIÓN: useCallback - Handlers del user menu
+  const handleProfile = useCallback(() => {
+    navigate('/perfil');
+  }, [navigate]);
+
+  const handleLogout = useCallback(() => {
+    logout();
+    navigate('/login');
+  }, [logout, navigate]);
+
+  // ✅ OPTIMIZACIÓN: useMemo - Items del dropdown del usuario
+  const userMenuItems = useMemo(() => [
     {
       key: 'profile',
       icon: <UserOutlined />,
       label: 'Mi Perfil',
-      onClick: () => navigate('/perfil'),
+      onClick: handleProfile,
     },
     {
       type: 'divider',
@@ -223,15 +284,13 @@ const AppLayout = ({ children }) => {
       key: 'logout',
       icon: <LogoutOutlined />,
       label: 'Cerrar Sesión',
-      onClick: () => {
-        logout();
-        navigate('/login');
-      },
+      onClick: handleLogout,
       danger: true,
     },
-  ];
+  ], [handleProfile, handleLogout]);
 
-  const headerStyle = {
+  // ✅ OPTIMIZACIÓN: useMemo - Estilos (evita recrear objetos en cada render)
+  const headerStyle = useMemo(() => ({
     padding: '0 24px',
     background: isDarkMode ? '#001529' : '#ffffff',
     display: 'flex',
@@ -239,26 +298,38 @@ const AppLayout = ({ children }) => {
     justifyContent: 'space-between',
     borderBottom: `1px solid ${isDarkMode ? '#303030' : '#f0f0f0'}`,
     boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
-  };
+  }), [isDarkMode]);
 
-  const siderStyle = {
+  const siderStyle = useMemo(() => ({
     background: isDarkMode ? '#001529' : '#ffffff',
-  };
+  }), [isDarkMode]);
 
-  const contentStyle = {
+  const contentStyle = useMemo(() => ({
     margin: isMobile ? '16px' : '24px',
     padding: isMobile ? '16px' : '24px',
     minHeight: '80vh',
     background: isDarkMode ? '#141414' : '#ffffff',
     borderRadius: '8px',
     overflow: 'auto',
-  };
+  }), [isDarkMode, isMobile]);
 
-  // Componente del menú para reutilizar
+  // ✅ OPTIMIZACIÓN: useCallback - Handlers de menú
+  const handleToggleCollapsed = useCallback(() => {
+    if (isMobile) {
+      setMobileMenuOpen(!mobileMenuOpen);
+    } else {
+      setCollapsed(!collapsed);
+    }
+  }, [isMobile, mobileMenuOpen, collapsed]);
+
+  // ✅ OPTIMIZACIÓN: useMemo - Company logo
+  const companyLogo = useMemo(() => 
+    userInfo?.empresa?.data?.logo, 
+    [userInfo?.empresa?.data?.logo]
+  );
+
+  // ✅ Componente del menú (sin memo porque usa variables del scope padre)
   const MenuComponent = () => {
-
-  const companyLogo = userInfo?.empresa?.data?.logo;
-
     return (
       <div>
         {/* Logo/Brand */}
@@ -372,13 +443,7 @@ const AppLayout = ({ children }) => {
             <Button
               type="text"
               icon={isMobile ? <MenuUnfoldOutlined /> : (collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />)}
-              onClick={() => {
-                if (isMobile) {
-                  setMobileMenuOpen(!mobileMenuOpen);
-                } else {
-                  setCollapsed(!collapsed);
-                }
-              }}
+              onClick={handleToggleCollapsed}
               style={{
                 fontSize: '16px',
                 width: 64,
@@ -445,4 +510,5 @@ const AppLayout = ({ children }) => {
   );
 };
 
-export default AppLayout;
+// ✅ OPTIMIZACIÓN: React.memo - Evitar re-renders innecesarios del layout completo
+export default memo(AppLayout);

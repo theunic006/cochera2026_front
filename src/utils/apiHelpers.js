@@ -10,13 +10,15 @@ export function handleApiError(error) {
 
 // Función para normalizar respuestas con paginación
 export function normalizePaginationResponse(response, page = 1, perPage = 15) {
+  const rolesData = response.data?.data || response.data;
+  
   return {
     success: true,
-    data: response.data?.data || response.data,
+    data: rolesData,
     pagination: response.data?.pagination || {
       current_page: page,
       per_page: perPage,
-      total: response.data?.total || 0
+      total: response.data?.total || rolesData?.length || 0
     }
   };
 }

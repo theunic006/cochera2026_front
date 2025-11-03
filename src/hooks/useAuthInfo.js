@@ -1,8 +1,9 @@
 
 
-import { useAuth } from '../context/AuthContext';
+// ✅ FASE 3: Path aliases + Zustand
+import { useAuth } from '@stores/authStore';
 import { useEffect, useState, useMemo, useRef } from 'react';
-import { companyService } from '../services/companyService';
+import { companyService } from '../features/empresas/services/companyService';
 
 /**
  * Hook para obtener el usuario logueado y la información de la empresa

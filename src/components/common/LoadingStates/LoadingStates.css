@@ -1,0 +1,308 @@
+/* ============================================
+   LOADING STATES - SKELETON COMPONENTS
+   Estilos para todos los skeletons con shimmer
+   ============================================ */
+
+/* ==========================================
+   SHIMMER ANIMATION (Efecto de brillo)
+   ========================================== */
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    #f0f0f0 0%,
+    #f8f8f8 50%,
+    #f0f0f0 100%
+  );
+  background-size: 1000px 100%;
+  animation: shimmer 2s infinite linear;
+  border-radius: 4px;
+}
+
+/* Shimmer para tema oscuro */
+[data-theme='dark'] .shimmer {
+  background: linear-gradient(
+    90deg,
+    #1f1f1f 0%,
+    #2a2a2a 50%,
+    #1f1f1f 100%
+  );
+  background-size: 1000px 100%;
+}
+
+/* ==========================================
+   TABLE SKELETON
+   ========================================== */
+.table-skeleton-container {
+  width: 100%;
+  padding: 16px;
+}
+
+.skeleton-table-header {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.skeleton-table-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.skeleton-cell {
+  height: 40px;
+  border-radius: 4px;
+}
+
+.skeleton-header {
+  height: 44px;
+  background: linear-gradient(
+    90deg,
+    #e8e8e8 0%,
+    #f0f0f0 50%,
+    #e8e8e8 100%
+  );
+  background-size: 1000px 100%;
+}
+
+/* ==========================================
+   FORM SKELETON
+   ========================================== */
+.form-skeleton-container {
+  width: 100%;
+  max-width: 600px;
+  padding: 24px;
+}
+
+.skeleton-form-title {
+  height: 32px;
+  width: 60%;
+  margin-bottom: 24px;
+  border-radius: 4px;
+}
+
+.skeleton-form-field {
+  margin-bottom: 20px;
+}
+
+.skeleton-label {
+  height: 20px;
+  width: 30%;
+  margin-bottom: 8px;
+  border-radius: 4px;
+}
+
+.skeleton-input {
+  height: 40px;
+  width: 100%;
+  border-radius: 4px;
+}
+
+.skeleton-form-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 32px;
+}
+
+.skeleton-button {
+  height: 40px;
+  width: 100px;
+  border-radius: 4px;
+}
+
+/* ==========================================
+   CARD SKELETON
+   ========================================== */
+.card-skeleton-container {
+  width: 100%;
+  padding: 16px;
+}
+
+.skeleton-card-image {
+  height: 200px;
+  width: 100%;
+  margin-bottom: 16px;
+  border-radius: 8px;
+}
+
+.skeleton-card-title {
+  height: 24px;
+  width: 70%;
+  margin-bottom: 12px;
+  border-radius: 4px;
+}
+
+.skeleton-card-line {
+  height: 16px;
+  margin-bottom: 8px;
+  border-radius: 4px;
+}
+
+.skeleton-card-footer {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.skeleton-card-action {
+  height: 32px;
+  width: 80px;
+  border-radius: 4px;
+}
+
+/* ==========================================
+   DASHBOARD SKELETON
+   ========================================== */
+.dashboard-skeleton-container {
+  padding: 24px;
+}
+
+.skeleton-dashboard-header {
+  margin-bottom: 24px;
+}
+
+.skeleton-dashboard-title {
+  height: 32px;
+  width: 40%;
+  margin-bottom: 8px;
+  border-radius: 4px;
+}
+
+.skeleton-dashboard-subtitle {
+  height: 20px;
+  width: 60%;
+  border-radius: 4px;
+}
+
+.skeleton-stat-card {
+  background: white;
+  padding: 24px;
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+[data-theme='dark'] .skeleton-stat-card {
+  background: #1f1f1f;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.skeleton-stat-icon {
+  height: 48px;
+  width: 48px;
+  border-radius: 50%;
+}
+
+.skeleton-stat-value {
+  height: 36px;
+  width: 80%;
+  border-radius: 4px;
+}
+
+.skeleton-stat-label {
+  height: 20px;
+  width: 60%;
+  border-radius: 4px;
+}
+
+/* ==========================================
+   RESPONSIVE
+   ========================================== */
+@media (max-width: 768px) {
+  .skeleton-table-header,
+  .skeleton-table-row {
+    grid-template-columns: 1fr;
+  }
+  
+  .skeleton-form-container {
+    padding: 16px;
+  }
+  
+  .skeleton-form-actions {
+    flex-direction: column;
+  }
+  
+  .skeleton-button {
+    width: 100%;
+  }
+}
+
+/* ==========================================
+   DARK MODE ADJUSTMENTS
+   ========================================== */
+[data-theme='dark'] .skeleton-table-header,
+[data-theme='dark'] .skeleton-card-footer {
+  border-color: #303030;
+}
+
+[data-theme='dark'] .skeleton-header {
+  background: linear-gradient(
+    90deg,
+    #252525 0%,
+    #2d2d2d 50%,
+    #252525 100%
+  );
+  background-size: 1000px 100%;
+}
+
+/* ==========================================
+   ACCESSIBILITY
+   ========================================== */
+.skeleton-cell,
+.skeleton-input,
+.skeleton-card-line {
+  /* Accesibilidad: indicar que es contenido de carga */
+  position: relative;
+}
+
+.skeleton-cell::after,
+.skeleton-input::after,
+.skeleton-card-line::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: inherit;
+}
+
+/* ==========================================
+   PERFORMANCE OPTIMIZATION
+   ========================================== */
+.shimmer {
+  /* Mejorar performance de animación */
+  will-change: background-position;
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+/* Reducir animaciones si el usuario prefiere menos movimiento */
+@media (prefers-reduced-motion: reduce) {
+  .shimmer {
+    animation: none;
+    background: #f0f0f0;
+  }
+  
+  [data-theme='dark'] .shimmer {
+    background: #1f1f1f;
+  }
+}

@@ -1,9 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Table, Card, Button, Input, Row, Col, Statistic, message } from 'antd';
 import { ReloadOutlined } from '@ant-design/icons';
 
 /**
- * Componente de tabla genérica reutilizable
+ * Componente de tabla genérica reutilizable (OPTIMIZADO)
+ * 
+ * ✅ Optimizaciones aplicadas:
+ * - React.memo para evitar re-renders innecesarios
+ * - useCallback para memoizar funciones
+ * - useMemo para cálculos y configuraciones
+ * 
  * Props:
  * - columns: array - Columnas de la tabla
  * - dataSource: array - Datos de la tabla
@@ -24,7 +30,7 @@ import { ReloadOutlined } from '@ant-design/icons';
  * - rowKey: string - Key para las filas (default: 'id')
  * - scroll: object - Configuración de scroll
  */
-const TableBase = ({
+const TableBase = React.memo(({
   columns,
   dataSource = [],
   loading = false,
@@ -53,17 +59,17 @@ const TableBase = ({
   const searchValue = typeof searchText === 'string' ? searchText : internalSearchText;
   const setSearchValue = typeof setSearchText === 'function' ? setSearchText : setInternalSearchText;
 
-  // Función para obtener valor anidado del objeto
-  const getNestedValue = (obj, path) => {
+  // Función para obtener valor anidado del objeto (memoizada)
+  const getNestedValue = useCallback((obj, path) => {
     return path.split('.').reduce((current, key) => current?.[key], obj);
-  };
+  }, []);
 
-  // Filtrar datos según el texto de búsqueda
+  // Filtrar datos según el texto de búsqueda (memoizado)
   // Ya no filtramos localmente, solo mostramos lo que llega
-  const filteredData = dataSource;
+  const filteredData = useMemo(() => dataSource, [dataSource]);
 
-  // Configuración por defecto de paginación
-  const defaultPagination = {
+  // Configuración por defecto de paginación (memoizada)
+  const defaultPagination = useMemo(() => ({
     current: 1,
     pageSize: 15,
     total: 0,
@@ -73,7 +79,12 @@ const TableBase = ({
     showTotal: (total, range) => `${range[0]}-${range[1]} de ${total} elementos`,
     size: 'default',
     ...pagination
-  };
+  }), [pagination]);
+
+  // Handler para cambio de búsqueda (memoizado)
+  const handleSearchChange = useCallback((e) => {
+    setSearchValue(e.target.value.toUpperCase());
+  }, [setSearchValue]);
 
   return (
     <div>
@@ -119,7 +130,7 @@ const TableBase = ({
                 type="text"
                 placeholder={searchPlaceholder}
                 value={searchValue}
-                onChange={e => setSearchValue(e.target.value.toUpperCase())}
+                onChange={handleSearchChange}
                 style={{ width: 200, textTransform: 'uppercase' }}
                 maxLength={50}
                 autoComplete="off"
@@ -142,6 +153,19 @@ const TableBase = ({
       </Card>
     </div>
   );
-};
+}, (prevProps, nextProps) => {
+  // Solo re-renderizar si cambian props relevantes
+  return (
+    prevProps.dataSource === nextProps.dataSource &&
+    prevProps.loading === nextProps.loading &&
+    prevProps.pagination?.current === nextProps.pagination?.current &&
+    prevProps.pagination?.pageSize === nextProps.pagination?.pageSize &&
+    prevProps.pagination?.total === nextProps.pagination?.total &&
+    prevProps.searchText === nextProps.searchText &&
+    prevProps.columns === nextProps.columns
+  );
+});
+
+TableBase.displayName = 'TableBase';
 
 export default TableBase;

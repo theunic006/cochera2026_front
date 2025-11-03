@@ -1,6 +1,7 @@
 import { Navigate } from 'react-router-dom';
-import { Spin } from 'antd';
-import { useAuth } from '../context/AuthContext';
+// ✅ FASE 3: Path aliases + Zustand
+import { useAuth } from '@stores/authStore';
+import { DashboardSkeleton } from './common/LoadingStates';
 
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
@@ -11,9 +12,10 @@ const ProtectedRoute = ({ children }) => {
         display: 'flex', 
         justifyContent: 'center', 
         alignItems: 'center', 
-        height: '100vh' 
+        height: '100vh',
+        padding: '24px'
       }}>
-        <Spin size="large" />
+        <DashboardSkeleton />
       </div>
     );
   }

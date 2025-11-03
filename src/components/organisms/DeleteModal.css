@@ -1,0 +1,110 @@
+/* DeleteModal - Estilos para modal de confirmación de eliminación */
+
+.delete-modal-confirm .ant-modal-content {
+  background-color: #1f1f1f !important;
+  border: 1px solid rgba(255, 77, 79, 0.3) !important;
+  border-radius: 12px !important;
+}
+
+.delete-modal-confirm .ant-modal-header {
+  background-color: #1f1f1f !important;
+  border-bottom: 1px solid rgba(255, 77, 79, 0.2) !important;
+}
+
+.delete-modal-confirm .ant-modal-title {
+  color: #fff !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+}
+
+.delete-modal-confirm .ant-modal-body {
+  background-color: #1f1f1f !important;
+  color: #d9d9d9 !important;
+  font-size: 14px !important;
+  padding: 24px !important;
+}
+
+.delete-modal-confirm .ant-modal-footer {
+  background-color: #1f1f1f !important;
+  border-top: 1px solid rgba(255, 77, 79, 0.2) !important;
+  padding: 16px 24px !important;
+}
+
+.delete-modal-confirm .ant-modal-confirm-btns {
+  margin-top: 0 !important;
+}
+
+/* Icono de advertencia */
+.delete-modal-confirm .ant-modal-confirm-body > .anticon {
+  color: #ff4d4f !important;
+  font-size: 22px !important;
+  margin-right: 16px !important;
+}
+
+/* Contenido del texto */
+.delete-modal-confirm .ant-modal-confirm-content {
+  color: #d9d9d9 !important;
+  margin-left: 38px !important;
+}
+
+/* Botones */
+.delete-modal-confirm .ant-btn {
+  height: 40px !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  border-radius: 6px !important;
+}
+
+.delete-modal-confirm .ant-btn-default {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  color: #fff !important;
+}
+
+.delete-modal-confirm .ant-btn-default:hover {
+  background-color: rgba(255, 255, 255, 0.15) !important;
+  border-color: rgba(255, 255, 255, 0.3) !important;
+}
+
+.delete-modal-confirm .ant-btn-primary {
+  background-color: #ff4d4f !important;
+  border: 1px solid #ff4d4f !important;
+  color: #fff !important;
+}
+
+.delete-modal-confirm .ant-btn-primary:hover {
+  background-color: #ff7875 !important;
+  border-color: #ff7875 !important;
+}
+
+.delete-modal-confirm .ant-btn-primary:active {
+  background-color: #d9363e !important;
+  border-color: #d9363e !important;
+}
+
+/* Animación de entrada */
+.delete-modal-confirm.ant-modal {
+  animation: deleteModalFadeIn 0.2s ease-out;
+}
+
+@keyframes deleteModalFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .delete-modal-confirm .ant-modal-body {
+    padding: 16px !important;
+  }
+  
+  .delete-modal-confirm .ant-modal-footer {
+    padding: 12px 16px !important;
+  }
+}

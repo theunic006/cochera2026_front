@@ -1,0 +1,145 @@
+/* ============================================
+   ERROR BOUNDARIES STYLES
+   Estilos para componentes de error
+   ============================================ */
+
+.error-boundary-container {
+  min-height: 400px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  margin: 16px 0;
+}
+
+.error-boundary-container .ant-result {
+  padding: 48px 32px;
+}
+
+.error-boundary-container .ant-result-icon {
+  margin-bottom: 24px;
+}
+
+.error-boundary-container .ant-result-icon svg {
+  font-size: 72px;
+}
+
+.error-boundary-container .ant-result-title {
+  font-size: 24px;
+  font-weight: 600;
+  color: #262626;
+  margin-bottom: 8px;
+}
+
+.error-boundary-container .ant-result-subtitle {
+  font-size: 14px;
+  color: #8c8c8c;
+  margin-bottom: 24px;
+}
+
+/* Card de detalles del error */
+.error-details-card {
+  margin-top: 24px;
+  text-align: left;
+  max-width: 800px;
+}
+
+.error-details-card .ant-card-head-title {
+  font-size: 14px;
+  color: #fa8c16;
+}
+
+.error-details-card .ant-typography-copy {
+  font-size: 12px;
+}
+
+/* Botones de acción */
+.error-boundary-container .ant-result-extra {
+  margin-top: 24px;
+}
+
+.error-boundary-container .ant-result-extra .ant-btn {
+  margin: 0 8px;
+  min-width: 120px;
+}
+
+/* ==========================================
+   DARK MODE
+   ========================================== */
+[data-theme='dark'] .error-boundary-container .ant-result-title {
+  color: #e8e8e8;
+}
+
+[data-theme='dark'] .error-boundary-container .ant-result-subtitle {
+  color: #8c8c8c;
+}
+
+[data-theme='dark'] .error-details-card {
+  background: #1f1f1f;
+  border-color: #303030;
+}
+
+[data-theme='dark'] .error-details-card .ant-card-head {
+  border-color: #303030;
+}
+
+/* ==========================================
+   RESPONSIVE
+   ========================================== */
+@media (max-width: 768px) {
+  .error-boundary-container {
+    padding: 16px;
+    min-height: 300px;
+  }
+
+  .error-boundary-container .ant-result {
+    padding: 24px 16px;
+  }
+
+  .error-boundary-container .ant-result-icon svg {
+    font-size: 48px;
+  }
+
+  .error-boundary-container .ant-result-title {
+    font-size: 18px;
+  }
+
+  .error-boundary-container .ant-result-subtitle {
+    font-size: 13px;
+  }
+
+  .error-boundary-container .ant-result-extra .ant-btn {
+    margin: 4px;
+    min-width: auto;
+    width: 100%;
+  }
+
+  .error-details-card {
+    font-size: 11px;
+  }
+}
+
+/* ==========================================
+   ANIMATIONS
+   ========================================== */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.error-boundary-container {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Reducir animaciones si el usuario lo prefiere */
+@media (prefers-reduced-motion: reduce) {
+  .error-boundary-container {
+    animation: none;
+  }
+}
